@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QLekha — CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#0B1F3A; --navy-lt:#122847;
+  --blue:#1A6FE8; --blue-lt:#3B8EFF; --blue-pale:rgba(26,111,232,0.08);
+  --teal:#0EA5A0; --teal-pale:rgba(14,165,160,0.1);
+  --amber:#FFB400; --amber-pale:rgba(255,180,0,0.1);
+  --red:#EF4444; --red-pale:rgba(239,68,68,0.08);
+  --green:#22C55E; --green-pale:rgba(34,197,94,0.1);
+  --purple:#8B5CF6; --purple-pale:rgba(139,92,246,0.1);
+  --bg:#F0F4F8; --white:#fff;
+  --gray-50:#F8FAFC; --gray-100:#E8EDF3; --gray-200:#D1D9E6;
+  --gray-400:#8A9BB5; --gray-600:#4A5568;
+  --font-d:'Syne',sans-serif; --font-b:'Inter',sans-serif; --font-m:'JetBrains Mono',monospace;
+  --r:10px; --r-lg:16px; --shadow:0 2px 12px rgba(11,31,58,0.08); --shadow-md:0 8px 32px rgba(11,31,58,0.12);
+}
+html{font-size:14px;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--navy);min-height:100vh;}
+
+.topbar{background:var(--white);border-bottom:1px solid var(--gray-100);padding:0 24px;height:60px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow);}
+.logo{font-family:var(--font-d);font-size:18px;font-weight:800;color:var(--navy);}
+.logo span{color:var(--blue-lt);}
+.divider{width:1px;height:20px;background:var(--gray-200);}
+.topbar-right{margin-left:auto;display:flex;gap:8px;}
+
+.btn{padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-b);transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:var(--blue-lt);}
+.btn-navy{background:var(--navy);color:#fff;}.btn-navy:hover{background:var(--navy-lt);}
+.btn-ghost{background:var(--white);color:var(--gray-600);border:1px solid var(--gray-200);}.btn-ghost:hover{border-color:var(--blue);color:var(--blue);}
+.btn-teal{background:var(--teal);color:#fff;}.btn-teal:hover{background:#0d9490;}
+.btn-green{background:var(--green-pale);color:var(--green);border:1px solid rgba(34,197,94,0.2);}.btn-green:hover{background:var(--green);color:#fff;}
+
+.page{padding:24px;max-width:1400px;margin:0 auto;}
+
+/* ── VIEW TABS ── */
+.view-tabs{display:flex;gap:0;background:var(--white);border:1px solid var(--gray-100);border-radius:var(--r-lg);padding:4px;width:fit-content;margin-bottom:20px;}
+.vtab{padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray-400);transition:all 0.15s;border:none;background:none;display:flex;align-items:center;gap:7px;}
+.vtab.active{background:var(--navy);color:#fff;}
+
+/* ── PIPELINE STATS ── */
+.pipeline-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.ps-card{background:var(--white);border:1px solid var(--gray-100);border-radius:var(--r-lg);padding:14px 16px;position:relative;overflow:hidden;cursor:pointer;transition:all 0.2s;}
+.ps-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.ps-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r-lg) var(--r-lg) 0 0;}
+.ps-card.new::after{background:#6366F1;}
+.ps-card.contacted::after{background:var(--amber);}
+.ps-card.quoted::after{background:var(--blue);}
+.ps-card.negotiating::after{background:var(--purple);}
+.ps-card.won::after{background:var(--green);}
+.ps-count{font-family:var(--font-m);font-size:22px;font-weight:500;color:var(--navy);margin-bottom:2px;}
+.ps-label{font-size:11px;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;}
+.ps-val{font-size:12px;font-weight:600;margin-top:4px;}
+
+/* ── KANBAN ── */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;min-height:500px;}
+.kanban-col{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--r-lg);overflow:hidden;}
+.kanban-header{padding:12px 14px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;}
+.kanban-title{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.kanban-cnt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(255,255,255,0.8);}
+.kanban-body{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:200px;}
+.kanban-add{width:100%;padding:8px;border:1.5px dashed var(--gray-200);border-radius:8px;background:transparent;cursor:pointer;font-size:12px;color:var(--gray-400);transition:all 0.15s;margin-top:4px;}
+.kanban-add:hover{border-color:var(--blue);color:var(--blue);}
+
+/* Lead Card */
+.lead-card{
+  background:var(--white);border:1px solid var(--gray-100);
+  border-radius:var(--r);padding:12px;cursor:pointer;
+  transition:all 0.2s;
+}
+.lead-card:hover{border-color:var(--blue);transform:translateY(-1px);box-shadow:var(--shadow);}
+.lead-card.dragging{opacity:0.5;transform:rotate(2deg);}
+.lead-name{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:3px;}
+.lead-phone{font-size:11px;color:var(--gray-400);}
+.lead-val{font-family:var(--font-m);font-size:12px;color:var(--gray-600);margin-top:6px;font-weight:500;}
+.lead-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.lead-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;}
+.lead-tag.arch{background:var(--blue-pale);color:var(--blue);}
+.lead-tag.build{background:var(--teal-pale);color:var(--teal);}
+.lead-tag.ind{background:var(--amber-pale);color:var(--amber);}
+.lead-tag.corp{background:var(--purple-pale);color:var(--purple);}
+.lead-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:6px;border-top:1px solid var(--gray-50);}
+.lead-date{font-size:10px;color:var(--gray-400);}
+.lead-action-btns{display:flex;gap:3px;}
+.lbtn{padding:3px 7px;border-radius:5px;border:1px solid var(--gray-100);background:var(--white);font-size:10px;cursor:pointer;color:var(--gray-600);transition:all 0.15s;}
+.lbtn:hover{border-color:var(--blue);color:var(--blue);}
+.lbtn.wa{color:#25D366;border-color:rgba(37,211,102,0.3);}
+.lbtn.wa:hover{background:#25D366;color:#fff;}
+
+/* Follow-up indicator */
+.followup-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.followup-dot.today{background:var(--red);}
+.followup-dot.soon{background:var(--amber);}
+.followup-dot.ok{background:var(--green);}
+
+/* ── CLIENTS VIEW ── */
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.client-card{
+  background:var(--white);border:1px solid var(--gray-100);
+  border-radius:var(--r-lg);padding:20px;cursor:pointer;
+  transition:all 0.2s;
+}
+.client-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.client-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
+.client-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:2px;}
+.client-phone{font-size:12px;color:var(--gray-400);}
+.client-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.client-stat{font-size:11px;background:var(--bg);border-radius:6px;padding:4px 8px;}
+.client-stat span{font-family:var(--font-m);font-weight:500;color:var(--navy);}
+.client-history{margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100);}
+.history-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12px;color:var(--gray-600);}
+.history-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+
+/* ── FOLLOW-UPS VIEW ── */
+.followup-list{display:flex;flex-direction:column;gap:10px;}
+.followup-card{
+  background:var(--white);border:1px solid var(--gray-100);
+  border-radius:var(--r-lg);padding:16px 20px;
+  display:flex;align-items:center;gap:16px;
+  transition:all 0.2s;
+}
+.followup-card:hover{border-color:var(--blue);}
+.followup-card.overdue{border-left:3px solid var(--red);background:rgba(239,68,68,0.02);}
+.followup-card.today{border-left:3px solid var(--amber);}
+.followup-card.upcoming{border-left:3px solid var(--green);}
+.fu-date{text-align:center;min-width:50px;}
+.fu-day{font-family:var(--font-m);font-size:20px;font-weight:500;color:var(--navy);}
+.fu-month{font-size:10px;color:var(--gray-400);text-transform:uppercase;}
+.fu-info{flex:1;}
+.fu-client{font-size:14px;font-weight:600;color:var(--navy);}
+.fu-note{font-size:12px;color:var(--gray-600);margin-top:2px;}
+.fu-value{font-family:var(--font-m);font-size:12px;color:var(--gray-400);margin-top:3px;}
+.fu-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;}
+.fu-badge.overdue{background:var(--red-pale);color:var(--red);}
+.fu-badge.today{background:var(--amber-pale);color:var(--amber);}
+.fu-badge.upcoming{background:var(--green-pale);color:var(--green);}
+.fu-actions{display:flex;gap:6px;}
+
+/* ── ACTIVITIES VIEW ── */
+.activity-timeline{display:flex;flex-direction:column;gap:0;position:relative;padding-left:32px;}
+.activity-timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:2px;background:var(--gray-100);}
+.activity-item{position:relative;padding-bottom:20px;}
+.activity-dot{position:absolute;left:-28px;width:20px;height:20px;border-radius:50%;background:var(--white);border:2px solid var(--gray-200);display:flex;align-items:center;justify-content:center;font-size:10px;z-index:1;}
+.activity-dot.call{border-color:var(--blue);background:var(--blue-pale);}
+.activity-dot.visit{border-color:var(--teal);background:var(--teal-pale);}
+.activity-dot.whatsapp{border-color:#25D366;background:rgba(37,211,102,0.1);}
+.activity-dot.quote{border-color:var(--amber);background:var(--amber-pale);}
+.activity-dot.payment{border-color:var(--green);background:var(--green-pale);}
+.activity-card{background:var(--white);border:1px solid var(--gray-100);border-radius:var(--r);padding:12px 16px;}
+.activity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.activity-title{font-size:13px;font-weight:600;color:var(--navy);}
+.activity-time{font-size:11px;color:var(--gray-400);}
+.activity-client{font-size:12px;color:var(--blue);margin-bottom:4px;}
+.activity-note{font-size:12px;color:var(--gray-600);line-height:1.5;}
+
+/* ── SEARCH ── */
+.search-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:8px 12px;flex:1;max-width:320px;transition:all 0.2s;}
+.search-box:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,111,232,0.1);}
+.search-box input{border:none;background:transparent;outline:none;font-size:13px;color:var(--navy);font-family:var(--font-b);width:100%;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--white);border-radius:var(--r-lg);width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-md);}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:var(--font-d);font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--gray-400);}
+.modal-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;gap:10px;justify-content:flex-end;}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+.lbl{font-size:11px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.5px;}
+.inp{padding:9px 12px;border-radius:8px;border:1.5px solid var(--gray-200);font-size:13px;font-family:var(--font-b);color:var(--navy);background:var(--white);outline:none;width:100%;transition:all 0.2s;}
+.inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,111,232,0.1);}
+.inp::placeholder{color:var(--gray-400);}
+.sel{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238A9BB5' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:200;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-md);transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(.34,1.56,.64,1);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:var(--teal);}
+.toast.error{background:var(--red);}
+
+/* ── CLIENT DETAIL PANEL ── */
+.detail-panel{
+  position:fixed;right:0;top:0;bottom:0;width:400px;
+  background:var(--white);border-left:1px solid var(--gray-100);
+  z-index:80;transform:translateX(100%);transition:transform 0.3s;
+  display:flex;flex-direction:column;box-shadow:var(--shadow-md);
+}
+.detail-panel.open{transform:translateX(0);}
+.panel-header{padding:20px 24px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;}
+.panel-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--gray-400);}
+.panel-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.panel-section{margin-bottom:24px;}
+.panel-section-title{font-family:var(--font-d);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-400);margin-bottom:12px;}
+.panel-quote-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-50);}
+.panel-quote-item:last-child{border-bottom:none;}
+.panel-footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;gap:8px;}
+
+@media(max-width:1100px){.kanban{grid-template-columns:repeat(3,1fr);}.pipeline-stats{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:768px){.kanban{grid-template-columns:repeat(2,1fr);}.pipeline-stats{grid-template-columns:repeat(2,1fr);}.detail-panel{width:100%;}.clients-grid{grid-template-columns:1fr;}}
+@media(max-width:480px){.kanban{grid-template-columns:1fr;}.page{padding:16px;}.topbar{padding:0 16px;}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">Q<span>Lekha</span></div>
+  <div class="divider"></div>
+  <span style="font-size:14px;font-weight:600">CRM</span>
+  <div class="topbar-right">
+    <button class="btn btn-ghost" onclick="openModal('addLeadModal')">＋ Add Lead</button>
+    <button class="btn btn-ghost" onclick="openModal('addClientModal')">＋ Add Client</button>
+    <button class="btn btn-blue" onclick="openModal('addActivityModal')">📝 Log Activity</button>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- VIEW TABS -->
+  <div class="view-tabs">
+    <button class="vtab active" onclick="switchView('pipeline',this)">🎯 Pipeline</button>
+    <button class="vtab" onclick="switchView('clients',this)">👥 Clients</button>
+    <button class="vtab" onclick="switchView('followups',this)">🔔 Follow-ups <span style="background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px;margin-left:2px">3</span></button>
+    <button class="vtab" onclick="switchView('activities',this)">📅 Activities</button>
+  </div>
+
+  <!-- ══ PIPELINE VIEW ══ -->
+  <div id="view-pipeline">
+    <!-- Stats -->
+    <div class="pipeline-stats">
+      <div class="ps-card new" onclick="highlightCol('new')">
+        <div class="ps-count">4</div>
+        <div class="ps-label">🆕 New</div>
+        <div class="ps-val" style="color:#6366F1">₹3.2L potential</div>
+      </div>
+      <div class="ps-card contacted" onclick="highlightCol('contacted')">
+        <div class="ps-count">6</div>
+        <div class="ps-label">📞 Contacted</div>
+        <div class="ps-val" style="color:var(--amber)">₹8.5L potential</div>
+      </div>
+      <div class="ps-card quoted" onclick="highlightCol('quoted')">
+        <div class="ps-count">8</div>
+        <div class="ps-label">📋 Quoted</div>
+        <div class="ps-val" style="color:var(--blue)">₹14.2L potential</div>
+      </div>
+      <div class="ps-card negotiating" onclick="highlightCol('negotiating')">
+        <div class="ps-count">3</div>
+        <div class="ps-label">🤝 Negotiating</div>
+        <div class="ps-val" style="color:var(--purple)">₹6.8L potential</div>
+      </div>
+      <div class="ps-card won" onclick="highlightCol('won')">
+        <div class="ps-count">9</div>
+        <div class="ps-label">✅ Won</div>
+        <div class="ps-val" style="color:var(--green)">₹22.4L closed</div>
+      </div>
+    </div>
+
+    <!-- Kanban -->
+    <div class="kanban">
+
+      <!-- NEW -->
+      <div class="kanban-col">
+        <div class="kanban-header" style="border-top:3px solid #6366F1">
+          <span class="kanban-title" style="color:#6366F1">🆕 New <span class="kanban-cnt" style="background:#6366F1;color:#fff">4</span></span>
+          <button class="btn btn-ghost" style="padding:3px 8px;font-size:11px" onclick="openModal('addLeadModal')">＋</button>
+        </div>
+        <div class="kanban-body" id="col-new">
+          <div class="lead-card" onclick="openClientPanel('Kiran Reddy','+91 91234 56789','₹1.2L','builder','3 days ago','new')">
+            <div class="lead-name">Kiran Reddy</div>
+            <div class="lead-phone">+91 91234 56789</div>
+            <div class="lead-val">~₹1,20,000</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span><span class="lead-tag" style="background:var(--bg);color:var(--gray-600)">Aluminium</span></div>
+            <div class="lead-footer">
+              <span class="lead-date">3 days ago</span>
+              <div class="lead-action-btns">
+                <button class="lbtn wa" onclick="event.stopPropagation();toast('Opening WhatsApp...','success')">💬</button>
+                <button class="lbtn" onclick="event.stopPropagation()">📋</button>
+              </div>
+            </div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('Priya Iyer','+91 82345 67890','₹45K','individual','1 day ago','new')">
+            <div class="lead-name">Priya Iyer</div>
+            <div class="lead-phone">+91 82345 67890</div>
+            <div class="lead-val">~₹45,000</div>
+            <div class="lead-tags"><span class="lead-tag ind">Individual</span><span class="lead-tag" style="background:var(--bg);color:var(--gray-600)">UPVC</span></div>
+            <div class="lead-footer">
+              <span class="lead-date">1 day ago</span>
+              <div class="lead-action-btns">
+                <button class="lbtn wa" onclick="event.stopPropagation();toast('Opening WhatsApp...','success')">💬</button>
+                <button class="lbtn">📋</button>
+              </div>
+            </div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('Suresh Nair','+91 73456 78901','₹2.1L','builder','Today','new')">
+            <div class="lead-name">Suresh Nair</div>
+            <div class="lead-phone">+91 73456 78901</div>
+            <div class="lead-val">~₹2,10,000</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span></div>
+            <div class="lead-footer">
+              <div style="display:flex;align-items:center;gap:5px"><span class="followup-dot today"></span><span class="lead-date" style="color:var(--red);font-weight:600">Follow up today!</span></div>
+              <div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation();toast('Opening WhatsApp...','success')">💬</button></div>
+            </div>
+          </div>
+          <button class="kanban-add" onclick="openModal('addLeadModal')">＋ Add lead</button>
+        </div>
+      </div>
+
+      <!-- CONTACTED -->
+      <div class="kanban-col">
+        <div class="kanban-header" style="border-top:3px solid var(--amber)">
+          <span class="kanban-title" style="color:var(--amber)">📞 Contacted <span class="kanban-cnt" style="background:var(--amber);color:var(--navy)">6</span></span>
+        </div>
+        <div class="kanban-body" id="col-contacted">
+          <div class="lead-card" onclick="openClientPanel('Sun Constructions','+91 94567 89012','₹3.5L','builder','2 days ago','contacted')">
+            <div class="lead-name">Sun Constructions</div>
+            <div class="lead-phone">+91 94567 89012</div>
+            <div class="lead-val">~₹3,50,000</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span><span class="lead-tag" style="background:var(--bg);color:var(--gray-600)">Aluminium</span></div>
+            <div class="lead-footer">
+              <div style="display:flex;align-items:center;gap:5px"><span class="followup-dot soon"></span><span class="lead-date">Tomorrow</span></div>
+              <div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation();toast('Sending...','success')">💬</button><button class="lbtn">📋</button></div>
+            </div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('Rajan Nair','+91 85678 90123','₹80K','architect','3 days ago','contacted')">
+            <div class="lead-name">Rajan Nair</div>
+            <div class="lead-phone">+91 85678 90123</div>
+            <div class="lead-val">~₹80,000</div>
+            <div class="lead-tags"><span class="lead-tag arch">Architect</span></div>
+            <div class="lead-footer"><span class="lead-date">3 days ago</span><div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation()">💬</button></div></div>
+          </div>
+          <button class="kanban-add">＋ Add lead</button>
+        </div>
+      </div>
+
+      <!-- QUOTED -->
+      <div class="kanban-col">
+        <div class="kanban-header" style="border-top:3px solid var(--blue)">
+          <span class="kanban-title" style="color:var(--blue)">📋 Quoted <span class="kanban-cnt" style="background:var(--blue);color:#fff">8</span></span>
+        </div>
+        <div class="kanban-body" id="col-quoted">
+          <div class="lead-card" onclick="openClientPanel('Mehta Residence','+91 76543 21098','₹2,18,000','individual','10 Jul','quoted')">
+            <div class="lead-name">Mehta Residence</div>
+            <div class="lead-phone">+91 76543 21098</div>
+            <div class="lead-val">₹2,18,000 quoted</div>
+            <div class="lead-tags"><span class="lead-tag ind">Individual</span><span class="lead-tag" style="background:var(--bg);color:var(--gray-600)">#Q-2025-032</span></div>
+            <div class="lead-footer">
+              <div style="display:flex;align-items:center;gap:5px"><span class="followup-dot today"></span><span class="lead-date" style="color:var(--amber);font-weight:600">Follow up!</span></div>
+              <div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation();toast('Sending reminder...','success')">💬</button><button class="lbtn">📋</button></div>
+            </div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('City Heights','+91 65432 10987','₹56,200','builder','9 Jul','quoted')">
+            <div class="lead-name">City Heights Corp</div>
+            <div class="lead-phone">+91 65432 10987</div>
+            <div class="lead-val">₹56,200 quoted</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span></div>
+            <div class="lead-footer"><span class="lead-date">9 Jul</span><div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation()">💬</button></div></div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('Krishna Builders','+91 96543 21098','₹4.2L','builder','8 Jul','quoted')">
+            <div class="lead-name">Krishna Builders</div>
+            <div class="lead-phone">+91 96543 21098</div>
+            <div class="lead-val">~₹4,20,000 quoted</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span><span class="lead-tag" style="background:var(--bg);color:var(--gray-600)">Aluminium</span></div>
+            <div class="lead-footer"><span class="lead-date">8 Jul</span><div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation()">💬</button><button class="lbtn">📋</button></div></div>
+          </div>
+          <button class="kanban-add">＋ Add lead</button>
+        </div>
+      </div>
+
+      <!-- NEGOTIATING -->
+      <div class="kanban-col">
+        <div class="kanban-header" style="border-top:3px solid var(--purple)">
+          <span class="kanban-title" style="color:var(--purple)">🤝 Negotiating <span class="kanban-cnt" style="background:var(--purple);color:#fff">3</span></span>
+        </div>
+        <div class="kanban-body" id="col-negotiating">
+          <div class="lead-card" onclick="openClientPanel('Green Villa','+91 87654 32109','₹87,500','builder','11 Jul','negotiating')">
+            <div class="lead-name">Green Villa Project</div>
+            <div class="lead-phone">+91 87654 32109</div>
+            <div class="lead-val">₹87,500 quoted</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span><span class="lead-tag" style="background:var(--bg);color:var(--gray-600)">UPVC</span></div>
+            <div class="lead-footer"><div style="display:flex;align-items:center;gap:5px"><span class="followup-dot soon"></span><span class="lead-date">Tomorrow</span></div><div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation();toast('Opening WhatsApp...','success')">💬</button></div></div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('Patel Builders','+91 77654 32109','₹2.8L','builder','6 Jul','negotiating')">
+            <div class="lead-name">Patel Builders</div>
+            <div class="lead-phone">+91 77654 32109</div>
+            <div class="lead-val">₹2,80,000 quoted</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span></div>
+            <div class="lead-footer"><span class="lead-date">6 Jul</span><div class="lead-action-btns"><button class="lbtn wa" onclick="event.stopPropagation()">💬</button></div></div>
+          </div>
+          <button class="kanban-add">＋ Add lead</button>
+        </div>
+      </div>
+
+      <!-- WON -->
+      <div class="kanban-col">
+        <div class="kanban-header" style="border-top:3px solid var(--green)">
+          <span class="kanban-title" style="color:var(--green)">✅ Won <span class="kanban-cnt" style="background:var(--green);color:#fff">9</span></span>
+        </div>
+        <div class="kanban-body" id="col-won">
+          <div class="lead-card" onclick="openClientPanel('Sharma Builders','+91 98765 43210','₹1,24,000','builder','12 Jul','won')">
+            <div class="lead-name">Sharma Builders</div>
+            <div class="lead-phone">+91 98765 43210</div>
+            <div class="lead-val">₹1,24,000 won ✓</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span><span class="lead-tag" style="background:var(--green-pale);color:var(--green)">Closed</span></div>
+            <div class="lead-footer"><span class="lead-date">12 Jul</span><div class="lead-action-btns"><button class="lbtn">🧾 Invoice</button></div></div>
+          </div>
+          <div class="lead-card" onclick="openClientPanel('Reddy Constructions','+91 54321 09876','₹3,45,000','builder','8 Jul','won')">
+            <div class="lead-name">Reddy Constructions</div>
+            <div class="lead-phone">+91 54321 09876</div>
+            <div class="lead-val">₹3,45,000 won ✓</div>
+            <div class="lead-tags"><span class="lead-tag build">Builder</span><span class="lead-tag" style="background:var(--green-pale);color:var(--green)">Closed</span></div>
+            <div class="lead-footer"><span class="lead-date">8 Jul</span><div class="lead-action-btns"><button class="lbtn">🧾 Invoice</button></div></div>
+          </div>
+          <button class="kanban-add">＋ Add lead</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CLIENTS VIEW ══ -->
+  <div id="view-clients" style="display:none">
+    <div class="search-bar">
+      <div class="search-box"><span style="color:var(--gray-400)">🔍</span><input type="text" placeholder="Search clients by name, phone, city..."/></div>
+      <div style="display:flex;gap:6px">
+        {['All','Builder','Architect','Individual','Corporate'].map(t => `<div class="chip" onclick="setFilter('${t.toLowerCase()}',this)">${t}</div>`).join('')}
+      </div>
+    </div>
+    <div class="clients-grid">
+      ${[
+        {name:'Sharma Builders',phone:'+91 98765 43210',city:'Bengaluru',tag:'builder',quotes:3,billed:'₹1,24,000',paid:'₹1,24,000',color:'#1A6FE8'},
+        {name:'Mehta Residence',phone:'+91 76543 21098',city:'Bengaluru',tag:'individual',quotes:1,billed:'₹2,57,240',paid:'₹0',color:'#0EA5A0'},
+        {name:'Reddy Constructions',phone:'+91 54321 09876',city:'Hyderabad',tag:'builder',quotes:2,billed:'₹4,07,100',paid:'₹2,03,550',color:'#8B5CF6'},
+        {name:'Green Villa Project',phone:'+91 87654 32109',city:'Mysuru',tag:'builder',quotes:1,billed:'₹1,03,250',paid:'₹51,625',color:'#FFB400'},
+        {name:'City Heights Corp',phone:'+91 65432 10987',city:'Chennai',tag:'corporate',quotes:1,billed:'₹0',paid:'₹0',color:'#EF4444'},
+        {name:'Iyer Builders',phone:'+91 43210 98765',city:'Coimbatore',tag:'builder',quotes:1,billed:'₹0',paid:'₹0',color:'#22C55E'},
+      ].map(c => `
+        <div class="client-card" onclick="openClientPanel('${c.name}','${c.phone}','${c.billed}','${c.tag}','','')">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <div class="client-avatar" style="background:${c.color}">${c.name[0]}</div>
+            <div>
+              <div class="client-name">${c.name}</div>
+              <div class="client-phone">${c.phone}</div>
+            </div>
+            <span style="margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--blue-pale);color:var(--blue)">${c.tag}</span>
+          </div>
+          <div class="client-meta">
+            <div class="client-stat">Quotes: <span>${c.quotes}</span></div>
+            <div class="client-stat">Billed: <span>${c.billed}</span></div>
+            <div class="client-stat" style="color:${c.paid===c.billed?'var(--green)':'var(--amber)'}">Paid: <span>${c.paid}</span></div>
+          </div>
+          <div class="client-history">
+            <div class="history-item"><div class="history-dot" style="background:var(--blue)"></div>Last quote sent 3 days ago</div>
+            <div class="history-item"><div class="history-dot" style="background:var(--green)"></div>${c.city}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <!-- ══ FOLLOW-UPS VIEW ══ -->
+  <div id="view-followups" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <h2 style="font-family:var(--font-d);font-size:20px;font-weight:700">Follow-ups <span style="font-size:14px;font-weight:400;color:var(--gray-400)">(12 total)</span></h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost">All</button>
+        <button class="btn btn-red" style="background:var(--red-pale);color:var(--red);border-color:rgba(239,68,68,0.2)">🔴 Overdue (3)</button>
+        <button class="btn btn-amber" style="background:var(--amber-pale);border-color:rgba(255,180,0,0.2)">🟡 Today (2)</button>
+        <button class="btn btn-green">🟢 Upcoming (7)</button>
+      </div>
+    </div>
+    <div class="followup-list">
+      <div class="followup-card overdue">
+        <div class="fu-date"><div class="fu-day">14</div><div class="fu-month">Jul</div></div>
+        <div class="fu-info">
+          <div class="fu-client">Mehta Residence</div>
+          <div class="fu-note">Call to follow up on quote #Q-2025-032 — ₹2,18,000. Client showed interest but hasn't responded.</div>
+          <div class="fu-value">₹2,18,000 · Quoted</div>
+        </div>
+        <div style="text-align:right">
+          <span class="fu-badge overdue">3 days overdue</span>
+          <div class="fu-actions" style="margin-top:8px">
+            <button class="btn btn-teal" style="padding:6px 12px;font-size:12px" onclick="toast('Opening WhatsApp for Mehta...','success')">💬 WhatsApp</button>
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="toast('Follow-up rescheduled ✓','success')">✓ Done</button>
+          </div>
+        </div>
+      </div>
+      <div class="followup-card overdue">
+        <div class="fu-date"><div class="fu-day">15</div><div class="fu-month">Jul</div></div>
+        <div class="fu-info">
+          <div class="fu-client">Sun Constructions</div>
+          <div class="fu-note">Site visit scheduled — confirm timing. 12 aluminium sliding windows for new project.</div>
+          <div class="fu-value">~₹3,50,000 · Contacted</div>
+        </div>
+        <div style="text-align:right">
+          <span class="fu-badge overdue">2 days overdue</span>
+          <div class="fu-actions" style="margin-top:8px">
+            <button class="btn btn-teal" style="padding:6px 12px;font-size:12px" onclick="toast('Opening WhatsApp...','success')">💬 WhatsApp</button>
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px">✓ Done</button>
+          </div>
+        </div>
+      </div>
+      <div class="followup-card today">
+        <div class="fu-date"><div class="fu-day">18</div><div class="fu-month">Jul</div></div>
+        <div class="fu-info">
+          <div class="fu-client">Suresh Nair</div>
+          <div class="fu-note">New enquiry — needs quote for 8 casement windows. Call to understand exact measurements.</div>
+          <div class="fu-value">~₹2,10,000 · New</div>
+        </div>
+        <div style="text-align:right">
+          <span class="fu-badge today">Today</span>
+          <div class="fu-actions" style="margin-top:8px">
+            <button class="btn btn-blue" style="padding:6px 12px;font-size:12px" onclick="toast('Opening WhatsApp...','success')">💬 Call/Chat</button>
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px">📋 Create Quote</button>
+          </div>
+        </div>
+      </div>
+      <div class="followup-card upcoming">
+        <div class="fu-date"><div class="fu-day">20</div><div class="fu-month">Jul</div></div>
+        <div class="fu-info">
+          <div class="fu-client">Green Villa Project</div>
+          <div class="fu-note">Negotiate final price — client wants 5% discount on quote ₹87,500</div>
+          <div class="fu-value">₹87,500 · Negotiating</div>
+        </div>
+        <div style="text-align:right">
+          <span class="fu-badge upcoming">In 2 days</span>
+          <div class="fu-actions" style="margin-top:8px">
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px">Set Reminder</button>
+          </div>
+        </div>
+      </div>
+      <div class="followup-card upcoming">
+        <div class="fu-date"><div class="fu-day">22</div><div class="fu-month">Jul</div></div>
+        <div class="fu-info">
+          <div class="fu-client">Rajan Nair (Architect)</div>
+          <div class="fu-note">Send revised quote with DGU glass instead of 5MM clear — per last discussion</div>
+          <div class="fu-value">~₹80,000 · Contacted</div>
+        </div>
+        <div style="text-align:right">
+          <span class="fu-badge upcoming">In 4 days</span>
+          <div class="fu-actions" style="margin-top:8px">
+            <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px">📋 Revise Quote</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ACTIVITIES VIEW ══ -->
+  <div id="view-activities" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <h2 style="font-family:var(--font-d);font-size:20px;font-weight:700">Activity Timeline</h2>
+      <button class="btn btn-blue" onclick="openModal('addActivityModal')">📝 Log Activity</button>
+    </div>
+    <div class="activity-timeline">
+      <div class="activity-item">
+        <div class="activity-dot whatsapp">💬</div>
+        <div class="activity-card">
+          <div class="activity-header"><div class="activity-title">WhatsApp sent — Quote PDF</div><div class="activity-time">Today, 11:32 AM</div></div>
+          <div class="activity-client">Mehta Residence</div>
+          <div class="activity-note">Sent revised quote #Q-2025-032 (₹2,18,000) via WhatsApp. Client opened at 11:45 AM.</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot payment">💳</div>
+        <div class="activity-card">
+          <div class="activity-header"><div class="activity-title">Payment received</div><div class="activity-time">Today, 9:15 AM</div></div>
+          <div class="activity-client">Sharma Builders</div>
+          <div class="activity-note">Full payment of ₹1,46,320 received via NEFT. Transaction ref: TXN8823041. Invoice marked as Paid.</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot quote">📋</div>
+        <div class="activity-card">
+          <div class="activity-header"><div class="activity-title">Quote created & sent</div><div class="activity-time">Yesterday, 3:42 PM</div></div>
+          <div class="activity-client">Green Villa Project</div>
+          <div class="activity-note">Created quote #Q-2025-033 for 8 UPVC casement windows (₹87,500). Sent via WhatsApp.</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot call">📞</div>
+        <div class="activity-card">
+          <div class="activity-header"><div class="activity-title">Phone call — 12 minutes</div><div class="activity-time">Yesterday, 11:00 AM</div></div>
+          <div class="activity-client">Reddy Constructions</div>
+          <div class="activity-note">Discussed delivery timeline. Client confirmed 50% advance payment by 22 Jul. Follow up scheduled.</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot visit">🏠</div>
+        <div class="activity-card">
+          <div class="activity-header"><div class="activity-title">Site visit completed</div><div class="activity-time">17 Jul, 10:00 AM</div></div>
+          <div class="activity-client">Sun Constructions</div>
+          <div class="activity-note">Site visit to Banjara Hills project. Measured 12 window openings. Quote to be prepared by tomorrow.</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot whatsapp">💬</div>
+        <div class="activity-card">
+          <div class="activity-header"><div class="activity-title">WhatsApp — First contact</div><div class="activity-time">16 Jul, 4:20 PM</div></div>
+          <div class="activity-client">Kiran Reddy</div>
+          <div class="activity-note">New enquiry received via WhatsApp. Interested in aluminium sliding windows for residential project. Needs quote.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CLIENT DETAIL PANEL -->
+<div class="detail-panel" id="clientPanel">
+  <div class="panel-header">
+    <div>
+      <div style="font-family:var(--font-d);font-size:16px;font-weight:700" id="panelName">Mehta Residence</div>
+      <div style="font-size:12px;color:var(--gray-400);margin-top:2px" id="panelPhone">+91 76543 21098</div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+    <div class="panel-section">
+      <div class="panel-section-title">Status</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="panelStatusBtns">
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="moveStatus('new')">New</button>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="moveStatus('contacted')">Contacted</button>
+        <button class="btn btn-blue" style="padding:5px 12px;font-size:12px" onclick="moveStatus('quoted')">Quoted ✓</button>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="moveStatus('negotiating')">Negotiating</button>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px;background:var(--green-pale);color:var(--green);border-color:rgba(34,197,94,0.2)" onclick="moveStatus('won')">Won</button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Overview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--bg);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Potential Value</div><div style="font-family:var(--font-m);font-size:16px;font-weight:500;color:var(--navy)" id="panelVal">₹2,18,000</div></div>
+        <div style="background:var(--bg);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Client Type</div><div style="font-size:13px;font-weight:600;color:var(--navy);text-transform:capitalize" id="panelTag">individual</div></div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Quotes</div>
+      <div class="panel-quote-item">
+        <div><div style="font-size:13px;font-weight:600">#Q-2025-032</div><div style="font-size:11px;color:var(--gray-400)">10 Jul 2025</div></div>
+        <div style="text-align:right"><div style="font-family:var(--font-m);font-size:13px;font-weight:500">₹2,18,000</div><span style="background:var(--amber-pale);color:var(--amber);font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px">Pending</span></div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Follow-up Note</div>
+      <textarea style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--gray-200);font-size:13px;font-family:var(--font-b);resize:vertical;min-height:80px;outline:none;color:var(--navy)" placeholder="Add a note about next steps..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <input type="date" style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--gray-200);font-size:12px;font-family:var(--font-b);color:var(--navy);outline:none"/>
+        <button class="btn btn-blue" style="padding:7px 14px;font-size:12px" onclick="toast('Follow-up saved ✓','success')">Set Reminder</button>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Activity Log</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;color:var(--gray-600);padding:8px 0;border-bottom:1px solid var(--gray-50);display:flex;gap:8px"><span>💬</span> WhatsApp quote sent · Today 11:32 AM</div>
+        <div style="font-size:12px;color:var(--gray-600);padding:8px 0;border-bottom:1px solid var(--gray-50);display:flex;gap:8px"><span>📋</span> Quote #Q-2025-032 created · 10 Jul</div>
+        <div style="font-size:12px;color:var(--gray-600);padding:8px 0;display:flex;gap:8px"><span>📞</span> First call · 9 Jul</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel-footer">
+    <button class="btn btn-teal" style="flex:1;justify-content:center" onclick="toast('Opening WhatsApp...','success')">💬 WhatsApp</button>
+    <button class="btn btn-blue" style="flex:1;justify-content:center">📋 New Quote</button>
+  </div>
+</div>
+
+<!-- ADD LEAD MODAL -->
+<div class="modal-overlay" id="addLeadModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">＋ Add New Lead</div><button class="modal-close" onclick="closeModal('addLeadModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="lbl">Name *</label><input class="inp" placeholder="Client / company name"/></div>
+        <div class="form-group"><label class="lbl">Phone *</label><input class="inp" type="tel" placeholder="+91 XXXXX XXXXX"/></div>
+        <div class="form-group"><label class="lbl">Email</label><input class="inp" type="email" placeholder="client@email.com"/></div>
+        <div class="form-group"><label class="lbl">Tag</label>
+          <select class="inp sel"><option>Builder</option><option>Architect</option><option>Individual</option><option>Corporate</option><option>Dealer</option></select>
+        </div>
+        <div class="form-group"><label class="lbl">Source</label>
+          <select class="inp sel"><option>WhatsApp</option><option>Referral</option><option>IndiaMart</option><option>Walk-in</option><option>Instagram</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label class="lbl">Value Estimate ₹</label><input class="inp" type="number" placeholder="0"/></div>
+        <div class="form-group"><label class="lbl">Stage</label>
+          <select class="inp sel"><option>New</option><option>Contacted</option><option>Quoted</option><option>Negotiating</option></select>
+        </div>
+        <div class="form-group"><label class="lbl">Follow-up Date</label><input class="inp" type="date"/></div>
+        <div class="form-group full"><label class="lbl">Notes</label><textarea class="inp" placeholder="Any relevant notes..." style="resize:vertical;min-height:60px"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addLeadModal')">Cancel</button>
+      <button class="btn btn-blue" onclick="saveLead()">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ACTIVITY MODAL -->
+<div class="modal-overlay" id="addActivityModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">📝 Log Activity</div><button class="modal-close" onclick="closeModal('addActivityModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label class="lbl">Client *</label>
+          <select class="inp sel">
+            <option>Mehta Residence</option><option>Sharma Builders</option><option>Green Villa Project</option>
+            <option>Reddy Constructions</option><option>Sun Constructions</option><option>Kiran Reddy</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="lbl">Activity Type *</label>
+          <select class="inp sel"><option>📞 Phone Call</option><option>💬 WhatsApp</option><option>🏠 Site Visit</option><option>📋 Quote Sent</option><option>💳 Payment</option><option>📧 Email</option><option>🤝 Meeting</option></select>
+        </div>
+        <div class="form-group"><label class="lbl">Date & Time</label><input class="inp" type="datetime-local"/></div>
+        <div class="form-group full"><label class="lbl">Notes</label><textarea class="inp" placeholder="What happened? What was discussed? Next steps?" style="resize:vertical;min-height:80px"></textarea></div>
+        <div class="form-group"><label class="lbl">Outcome</label>
+          <select class="inp sel"><option>Positive</option><option>Neutral</option><option>Negative</option><option>No Answer</option></select>
+        </div>
+        <div class="form-group"><label class="lbl">Next Action Date</label><input class="inp" type="date"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addActivityModal')">Cancel</button>
+      <button class="btn btn-blue" onclick="saveActivity()">Log Activity</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLIENT MODAL -->
+<div class="modal-overlay" id="addClientModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">＋ Add Client</div><button class="modal-close" onclick="closeModal('addClientModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="lbl">Name *</label><input class="inp" placeholder="Client / company name"/></div>
+        <div class="form-group"><label class="lbl">Phone *</label><input class="inp" type="tel" placeholder="+91 XXXXX XXXXX"/></div>
+        <div class="form-group"><label class="lbl">Email</label><input class="inp" type="email"/></div>
+        <div class="form-group"><label class="lbl">City</label><input class="inp" placeholder="Bengaluru"/></div>
+        <div class="form-group"><label class="lbl">GST Number</label><input class="inp" placeholder="29ABCDE1234F1Z5"/></div>
+        <div class="form-group"><label class="lbl">Tag</label>
+          <select class="inp sel"><option>Individual</option><option>Builder</option><option>Architect</option><option>Corporate</option><option>Dealer</option></select>
+        </div>
+        <div class="form-group full"><label class="lbl">Address</label><input class="inp" placeholder="Full address"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addClientModal')">Cancel</button>
+      <button class="btn btn-blue" onclick="saveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// View switch
+function switchView(view, el) {
+  ['pipeline','clients','followups','activities'].forEach(v => {
+    document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
+  });
+  document.querySelectorAll('.vtab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Client detail panel
+function openClientPanel(name, phone, val, tag, date, status) {
+  document.getElementById('panelName').textContent = name;
+  document.getElementById('panelPhone').textContent = phone;
+  document.getElementById('panelVal').textContent = val;
+  document.getElementById('panelTag').textContent = tag;
+  document.getElementById('clientPanel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('clientPanel').classList.remove('open');
+}
+
+function moveStatus(status) {
+  toast('Status updated to ' + status + ' ✓', 'success');
+}
+
+// Modals
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function saveLead() {
+  closeModal('addLeadModal');
+  toast('Lead added to pipeline ✓', 'success');
+}
+
+function saveActivity() {
+  closeModal('addActivityModal');
+  toast('Activity logged ✓', 'success');
+}
+
+function saveClient() {
+  closeModal('addClientModal');
+  toast('Client saved ✓', 'success');
+}
+
+function highlightCol(col) {
+  document.querySelector(`#col-${col}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Toast
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.detail-panel') && !e.target.closest('.lead-card') && !e.target.closest('.client-card')) {
+    closePanel();
+  }
+});
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>
