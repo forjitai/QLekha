@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QLekha — Stock Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#0B1F3A; --navy-lt:#122847;
+  --blue:#1A6FE8; --blue-lt:#3B8EFF; --blue-pale:rgba(26,111,232,0.08);
+  --teal:#0EA5A0; --teal-pale:rgba(14,165,160,0.1);
+  --amber:#FFB400; --amber-pale:rgba(255,180,0,0.1);
+  --red:#EF4444; --red-pale:rgba(239,68,68,0.08);
+  --green:#22C55E; --green-pale:rgba(34,197,94,0.1);
+  --bg:#F0F4F8; --white:#fff;
+  --gray-50:#F8FAFC; --gray-100:#E8EDF3; --gray-200:#D1D9E6;
+  --gray-400:#8A9BB5; --gray-600:#4A5568;
+  --font-d:'Syne',sans-serif; --font-b:'Inter',sans-serif; --font-m:'JetBrains Mono',monospace;
+  --r:10px; --r-lg:16px; --shadow:0 2px 12px rgba(11,31,58,0.08); --shadow-md:0 8px 32px rgba(11,31,58,0.12);
+}
+html{font-size:14px;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--navy);min-height:100vh;}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--white);border-bottom:1px solid var(--gray-100);
+  padding:0 24px;height:60px;display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:50;box-shadow:var(--shadow);
+}
+.logo{font-family:var(--font-d);font-size:18px;font-weight:800;color:var(--navy);}
+.logo span{color:var(--blue-lt);}
+.divider{width:1px;height:20px;background:var(--gray-200);}
+.page-title{font-size:14px;font-weight:600;color:var(--navy);}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:var(--font-b);transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:var(--blue-lt);transform:translateY(-1px);}
+.btn-teal{background:var(--teal);color:#fff;}.btn-teal:hover{background:#0d9490;}
+.btn-navy{background:var(--navy);color:#fff;}.btn-navy:hover{background:var(--navy-lt);}
+.btn-ghost{background:var(--white);color:var(--gray-600);border:1px solid var(--gray-200);}.btn-ghost:hover{border-color:var(--blue);color:var(--blue);}
+.btn-green{background:var(--green-pale);color:var(--green);border:1px solid rgba(34,197,94,0.25);}.btn-green:hover{background:var(--green);color:#fff;}
+.btn-red{background:var(--red-pale);color:var(--red);border:1px solid rgba(239,68,68,0.2);}.btn-red:hover{background:var(--red);color:#fff;}
+.btn-amber{background:var(--amber-pale);color:var(--amber);border:1px solid rgba(255,180,0,0.25);}
+
+/* ── LAYOUT ── */
+.page{padding:24px;max-width:1300px;margin:0 auto;}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:16px;margin-bottom:20px;
+}
+.stat-card{
+  background:var(--white);border:1px solid var(--gray-100);
+  border-radius:var(--r-lg);padding:16px 20px;
+  display:flex;align-items:center;gap:14px;
+  transition:all 0.2s;
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.stat-val{font-family:var(--font-m);font-size:22px;font-weight:500;color:var(--navy);}
+.stat-lbl{font-size:11px;color:var(--gray-400);margin-top:2px;}
+.stat-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;margin-top:4px;display:inline-block;}
+
+/* ── TABS ── */
+.tab-row{
+  display:flex;align-items:center;gap:0;
+  background:var(--white);border:1px solid var(--gray-100);
+  border-radius:var(--r-lg);padding:4px;
+  width:fit-content;margin-bottom:20px;
+}
+.tab{
+  padding:8px 18px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  color:var(--gray-400);transition:all 0.15s;
+  display:flex;align-items:center;gap:8px;
+  border:none;background:none;
+}
+.tab:hover{color:var(--navy);}
+.tab.active{background:var(--navy);color:#fff;}
+.tab-count{font-size:10px;font-weight:700;padding:1px 7px;border-radius:100px;}
+.tab.active .tab-count{background:rgba(255,255,255,0.2);color:#fff;}
+.tab:not(.active) .tab-count{background:var(--gray-100);color:var(--gray-400);}
+
+/* ── TOOLBAR ── */
+.toolbar{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:16px;flex-wrap:wrap;
+}
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:var(--white);border:1px solid var(--gray-200);
+  border-radius:8px;padding:8px 12px;
+  transition:all 0.2s;flex:1;max-width:300px;
+}
+.search-box:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,111,232,0.1);}
+.search-box input{border:none;background:transparent;outline:none;font-size:13px;color:var(--navy);font-family:var(--font-b);width:100%;}
+.search-icon{color:var(--gray-400);font-size:14px;flex-shrink:0;}
+
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{
+  padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1px solid var(--gray-200);background:var(--white);
+  color:var(--gray-600);transition:all 0.15s;
+}
+.chip:hover{border-color:var(--blue);color:var(--blue);}
+.chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+.csv-section{
+  display:flex;align-items:center;gap:8px;margin-left:auto;
+}
+.csv-upload-label{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:var(--r);border:1px solid var(--gray-200);
+  background:var(--white);color:var(--gray-600);
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:all 0.15s;
+}
+.csv-upload-label:hover{border-color:var(--blue);color:var(--blue);}
+.csv-upload-label input{display:none;}
+
+/* ── TABLE ── */
+.table-wrap{
+  background:var(--white);border:1px solid var(--gray-100);
+  border-radius:var(--r-lg);overflow:hidden;
+}
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.8px;color:var(--gray-400);
+  padding:11px 16px;text-align:left;
+  background:var(--gray-50);border-bottom:1px solid var(--gray-100);
+  user-select:none;white-space:nowrap;cursor:pointer;
+}
+.data-table th:hover{color:var(--navy);}
+.data-table th.sort-asc::after{content:' ↑';}
+.data-table th.sort-desc::after{content:' ↓';}
+.data-table td{
+  padding:12px 16px;font-size:13px;
+  border-bottom:1px solid var(--gray-50);
+  color:var(--gray-600);vertical-align:middle;
+}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--gray-50);}
+.data-table tr.edited td{background:rgba(26,111,232,0.03);}
+.data-table tr.low-stock td:first-child{border-left:3px solid var(--red);}
+
+.td-main{font-weight:600;color:var(--navy);}
+.td-code{font-family:var(--font-m);font-size:11px;color:var(--gray-400);}
+.td-mono{font-family:var(--font-m);font-weight:500;color:var(--navy);}
+
+/* Inline edit input */
+.edit-input{
+  width:100%;padding:6px 8px;border-radius:6px;
+  border:1.5px solid var(--blue);
+  font-size:13px;font-family:var(--font-m);color:var(--navy);
+  background:var(--white);outline:none;
+  box-shadow:0 0 0 3px rgba(26,111,232,0.1);
+}
+.edit-input:focus{border-color:var(--blue-lt);}
+
+.price-cell{
+  display:flex;align-items:center;gap:6px;
+}
+.price-display{
+  font-family:var(--font-m);font-size:13px;font-weight:500;color:var(--navy);
+  cursor:pointer;padding:4px 8px;border-radius:5px;transition:all 0.15s;
+  border:1.5px solid transparent;min-width:70px;text-align:right;
+}
+.price-display:hover{border-color:var(--blue);background:var(--blue-pale);}
+.price-display.zero{color:var(--amber);}
+.price-display.missing{color:var(--red);background:var(--red-pale);border-color:rgba(239,68,68,0.2);}
+
+.save-btn{
+  padding:4px 10px;border-radius:6px;border:none;
+  background:var(--green);color:#fff;
+  font-size:11px;font-weight:600;cursor:pointer;
+  opacity:0;transition:all 0.15s;
+  white-space:nowrap;
+}
+.save-btn.show{opacity:1;}
+.save-btn:hover{background:#1aad50;}
+
+/* System badge */
+.sys-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:100px;
+  font-size:10px;font-weight:700;
+  text-transform:capitalize;
+}
+.sys-sliding{background:var(--blue-pale);color:var(--blue);}
+.sys-casement{background:var(--teal-pale);color:var(--teal);}
+.sys-door{background:var(--amber-pale);color:var(--amber);}
+.sys-fixed{background:var(--gray-100);color:var(--gray-600);}
+.sys-partition{background:rgba(139,92,246,0.1);color:#8B5CF6;}
+
+/* Type badge */
+.type-badge{
+  display:inline-flex;padding:3px 8px;border-radius:100px;
+  font-size:10px;font-weight:700;
+}
+.type-handle{background:var(--blue-pale);color:var(--blue);}
+.type-hinge{background:var(--teal-pale);color:var(--teal);}
+.type-roller{background:var(--amber-pale);color:var(--amber);}
+.type-lock{background:rgba(139,92,246,0.1);color:#8B5CF6;}
+.type-seal{background:var(--gray-100);color:var(--gray-600);}
+
+/* Alert badge */
+.alert-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:700;
+  padding:2px 8px;border-radius:100px;
+}
+.alert-low{background:var(--red-pale);color:var(--red);}
+.alert-zero{background:var(--amber-pale);color:var(--amber);}
+.alert-ok{background:var(--green-pale);color:var(--green);}
+
+/* Colour swatch */
+.colour-swatch{
+  display:inline-flex;align-items:center;gap:8px;
+}
+.swatch{
+  width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,0.1);flex-shrink:0;
+}
+
+/* Table footer */
+.table-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:var(--gray-50);border-top:1px solid var(--gray-100);
+  flex-wrap:wrap;gap:8px;
+}
+.table-footer p{font-size:12px;color:var(--gray-400);}
+.pagination{display:flex;gap:4px;}
+.pg{width:28px;height:28px;border-radius:6px;border:1px solid var(--gray-200);background:var(--white);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;color:var(--gray-600);}
+.pg.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.pg:hover:not(.active){border-color:var(--blue);color:var(--blue);}
+
+/* Per-page select */
+.per-page{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray-400);
+}
+.per-page select{
+  padding:4px 8px;border-radius:6px;border:1px solid var(--gray-200);
+  font-size:12px;font-family:var(--font-b);color:var(--navy);
+  background:var(--white);outline:none;cursor:pointer;
+}
+
+/* ── LOW STOCK ALERT BANNER ── */
+.alert-banner{
+  background:linear-gradient(135deg,#7f1d1d,#991b1b);
+  border-radius:var(--r-lg);padding:16px 20px;
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:20px;
+}
+.alert-banner-icon{font-size:24px;}
+.alert-banner-text{flex:1;}
+.alert-banner-title{font-family:var(--font-d);font-size:14px;font-weight:700;color:#fff;}
+.alert-banner-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;}
+.alert-items{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.alert-item-chip{
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+  border-radius:100px;padding:3px 10px;
+  font-size:11px;color:#fff;font-weight:500;
+}
+
+/* ── CSV PREVIEW MODAL ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);z-index:100;
+  align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal{
+  background:var(--white);border-radius:var(--r-lg);
+  width:100%;max-width:700px;max-height:80vh;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:var(--shadow-md);
+}
+.modal-header{
+  padding:20px 24px;border-bottom:1px solid var(--gray-100);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:var(--font-d);font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--gray-400);padding:4px;}
+.modal-close:hover{color:var(--navy);}
+.modal-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;gap:10px;justify-content:flex-end;}
+
+.csv-preview-table{width:100%;border-collapse:collapse;font-size:12px;}
+.csv-preview-table th{padding:8px 12px;background:var(--navy);color:#fff;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;}
+.csv-preview-table td{padding:8px 12px;border-bottom:1px solid var(--gray-100);color:var(--gray-600);}
+.csv-preview-table tr:nth-child(even) td{background:var(--gray-50);}
+.csv-row-valid{border-left:3px solid var(--green);}
+.csv-row-warn{border-left:3px solid var(--amber);}
+.csv-row-error{border-left:3px solid var(--red);}
+
+/* ── ADD MODAL ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+.lbl{font-size:11px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.5px;}
+.inp{padding:9px 12px;border-radius:8px;border:1.5px solid var(--gray-200);font-size:13px;font-family:var(--font-b);color:var(--navy);background:var(--white);transition:all 0.2s;outline:none;width:100%;}
+.inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,111,232,0.1);}
+.inp::placeholder{color:var(--gray-400);}
+.sel{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238A9BB5' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+
+/* ── BULK PRICE UPDATE ── */
+.bulk-bar{
+  background:var(--navy);border-radius:var(--r-lg);padding:14px 20px;
+  display:none;align-items:center;gap:14px;
+  margin-bottom:16px;flex-wrap:wrap;
+}
+.bulk-bar.show{display:flex;}
+.bulk-bar-text{font-size:13px;font-weight:600;color:#fff;}
+.bulk-bar-count{
+  font-family:var(--font-m);font-size:16px;font-weight:500;
+  color:var(--blue-lt);margin-right:4px;
+}
+.bulk-input-wrap{display:flex;align-items:center;gap:8px;}
+.bulk-input{
+  width:90px;padding:7px 10px;border-radius:7px;
+  border:1px solid rgba(255,255,255,0.2);
+  font-size:13px;font-family:var(--font-m);color:#fff;
+  background:rgba(255,255,255,0.1);outline:none;
+}
+.bulk-input::placeholder{color:rgba(255,255,255,0.4);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  background:var(--navy);color:#fff;
+  padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:var(--shadow-md);
+  transform:translateY(80px);opacity:0;
+  transition:all 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:var(--teal);}
+.toast.error{background:var(--red);}
+.toast.warning{background:var(--amber);color:var(--navy);}
+
+/* ── EMPTY STATE ── */
+.empty-state{padding:60px 20px;text-align:center;}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:8px;}
+.empty-sub{font-size:13px;color:var(--gray-400);margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto;}
+
+/* MOBILE */
+@media(max-width:900px){
+  .stats-bar{grid-template-columns:repeat(2,1fr);}
+  .toolbar{flex-direction:column;align-items:flex-start;}
+  .csv-section{margin-left:0;width:100%;justify-content:flex-end;}
+  .data-table th:nth-child(n+6),.data-table td:nth-child(n+6){display:none;}
+}
+@media(max-width:480px){
+  .stats-bar{grid-template-columns:1fr 1fr;}
+  .page{padding:16px;}
+  .topbar{padding:0 16px;}
+  .tab{padding:6px 12px;font-size:12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">Q<span>Lekha</span></div>
+  <div class="divider"></div>
+  <div class="page-title">Stock Manager</div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost" onclick="openAddModal()">＋ Add Item</button>
+    <button class="btn btn-blue" onclick="openCSVModal()">📥 Upload CSV</button>
+    <button class="btn btn-navy" onclick="downloadCSV()">⬇ Download CSV</button>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- LOW STOCK ALERT BANNER -->
+  <div class="alert-banner" id="alertBanner">
+    <div class="alert-banner-icon">⚠️</div>
+    <div class="alert-banner-text">
+      <div class="alert-banner-title">5 items have missing or zero prices — update before creating quotes</div>
+      <div class="alert-banner-sub">Quotes with ₹0 priced items will calculate incorrectly</div>
+      <div class="alert-items" id="alertItems"></div>
+    </div>
+    <button class="btn btn-ghost" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff" onclick="document.getElementById('alertBanner').style.display='none'">Dismiss</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--blue-pale)">🔩</div>
+      <div>
+        <div class="stat-val" id="profileCount">181</div>
+        <div class="stat-lbl">Total Profiles</div>
+        <div class="stat-badge" style="background:var(--red-pale);color:var(--red)" id="profileMissing">3 missing price</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--teal-pale)">🪟</div>
+      <div>
+        <div class="stat-val" id="glassCount">123</div>
+        <div class="stat-lbl">Glass Types</div>
+        <div class="stat-badge" style="background:var(--green-pale);color:var(--green)">All priced ✓</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--amber-pale)">🔧</div>
+      <div>
+        <div class="stat-val" id="accCount">181</div>
+        <div class="stat-lbl">Accessories</div>
+        <div class="stat-badge" style="background:var(--amber-pale);color:var(--amber)" id="accMissing">2 zero price</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(139,92,246,0.1)">⚖️</div>
+      <div>
+        <div class="stat-val">5</div>
+        <div class="stat-lbl">Weight Prices</div>
+        <div class="stat-badge" style="background:var(--red-pale);color:var(--red)">4 not set</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-row">
+    <button class="tab active" onclick="switchTab('profiles',this)">🔩 Profiles <span class="tab-count" id="tc-profiles">181</span></button>
+    <button class="tab" onclick="switchTab('glass',this)">🪟 Glass <span class="tab-count" id="tc-glass">123</span></button>
+    <button class="tab" onclick="switchTab('accessories',this)">🔧 Accessories <span class="tab-count" id="tc-accessories">181</span></button>
+    <button class="tab" onclick="switchTab('weights',this)">⚖️ Weight Price <span class="tab-count" id="tc-weights">5</span></button>
+  </div>
+
+  <!-- BULK BAR -->
+  <div class="bulk-bar" id="bulkBar">
+    <span class="bulk-bar-count" id="bulkCount">0</span>
+    <span class="bulk-bar-text">items selected</span>
+    <div class="bulk-input-wrap">
+      <span style="color:rgba(255,255,255,0.6);font-size:12px">Update price by</span>
+      <input class="bulk-input" type="number" placeholder="%" id="bulkPct"/>
+      <span style="color:rgba(255,255,255,0.6);font-size:12px">%</span>
+      <button class="btn btn-blue" onclick="applyBulkPrice()">Apply</button>
+    </div>
+    <button class="btn btn-ghost" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff" onclick="clearSelection()">Clear</button>
+    <button class="btn btn-red" onclick="deleteSelected()">🗑 Delete</button>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar" id="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Search profiles..." id="searchInput" oninput="filterTable()"/>
+    </div>
+    <div class="filter-chips" id="filterChips">
+      <div class="chip active" onclick="setFilter('all',this)">All</div>
+      <div class="chip" onclick="setFilter('sliding',this)">Sliding</div>
+      <div class="chip" onclick="setFilter('casement',this)">Casement</div>
+      <div class="chip" onclick="setFilter('door',this)">Door</div>
+      <div class="chip" onclick="setFilter('fixed',this)">Fixed</div>
+      <div class="chip" onclick="setFilter('partition',this)">Partition</div>
+    </div>
+    <div class="csv-section">
+      <div class="per-page">
+        Show
+        <select onchange="setPerPage(this.value)">
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        per page
+      </div>
+      <label class="csv-upload-label">
+        📤 Upload CSV
+        <input type="file" accept=".csv" onchange="handleCSVUpload(this)"/>
+      </label>
+      <button class="btn btn-ghost" onclick="downloadCSV()">⬇ Sample CSV</button>
+    </div>
+  </div>
+
+  <!-- TABLE CONTAINER -->
+  <div class="table-wrap" id="tableWrap">
+    <!-- Profiles Table -->
+    <div id="tab-profiles">
+      <table class="data-table" id="profilesTable">
+        <thead>
+          <tr>
+            <th style="width:40px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"/></th>
+            <th onclick="sortTable('profile_code')">Code</th>
+            <th onclick="sortTable('profile_name')">Profile Name</th>
+            <th onclick="sortTable('brand')">Brand</th>
+            <th onclick="sortTable('system')">System</th>
+            <th>GI Name</th>
+            <th onclick="sortTable('price_per_kg')">Price/kg ₹</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="profilesBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Glass Table -->
+    <div id="tab-glass" style="display:none">
+      <table class="data-table" id="glassTable">
+        <thead>
+          <tr>
+            <th style="width:40px"><input type="checkbox" onchange="toggleSelectAll(this)"/></th>
+            <th onclick="sortTable('name')">Name</th>
+            <th onclick="sortTable('thickness_mm')">Thickness</th>
+            <th onclick="sortTable('glass_type')">Type</th>
+            <th>HSN</th>
+            <th onclick="sortTable('price_per_sqft')">Price/SqFt ₹</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="glassBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Accessories Table -->
+    <div id="tab-accessories" style="display:none">
+      <table class="data-table" id="accTable">
+        <thead>
+          <tr>
+            <th style="width:40px"><input type="checkbox" onchange="toggleSelectAll(this)"/></th>
+            <th onclick="sortTable('type')">Type</th>
+            <th onclick="sortTable('name')">Name</th>
+            <th>Code</th>
+            <th onclick="sortTable('price')">Price ₹</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="accBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Weight Prices Table -->
+    <div id="tab-weights" style="display:none">
+      <table class="data-table" id="weightTable">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>Company</th>
+            <th>Colour</th>
+            <th>Colour Swatch</th>
+            <th>Price/kg ₹</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="weightBody"></tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <p id="tableInfo">Showing 1–20 of 181</p>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CSV PREVIEW MODAL -->
+<div class="modal-overlay" id="csvModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📤 CSV Upload Preview</div>
+      <button class="modal-close" onclick="closeModal('csvModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="csvPreviewContent">
+        <div style="text-align:center;padding:40px;color:var(--gray-400)">
+          <div style="font-size:40px;margin-bottom:12px">📄</div>
+          <p>Select a CSV file to preview before importing</p>
+          <label class="btn btn-blue" style="margin-top:16px;cursor:pointer">
+            Choose CSV File
+            <input type="file" accept=".csv" style="display:none" onchange="handleCSVUpload(this)"/>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('csvModal')">Cancel</button>
+      <button class="btn btn-blue" id="importConfirmBtn" onclick="confirmImport()" style="display:none">✓ Import All Valid Rows</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ITEM MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="addModalTitle">＋ Add Profile</div>
+      <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="addModalForm"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-blue" onclick="saveNewItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Saved</div>
+
+<script>
+// ── DATA ──
+const PROFILES_DATA = [
+  {id:1,profile_code:'SB-BP01_white',profile_name:'Baypole',brand:'SBPL',system:'sliding',gi_name:'GI 1.5',price_per_kg:128,is_active:true},
+  {id:2,profile_code:'SB-D1_black',profile_name:'30 MM D. Strip',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:0,is_active:true},
+  {id:3,profile_code:'SB-CLP_black',profile_name:'Blind Louver',brand:'SBPL',system:'casement',gi_name:'',price_per_kg:95,is_active:true},
+  {id:4,profile_code:'SB-F1_black',profile_name:'Frame Connector',brand:'SBPL',system:'door',gi_name:'GI 1.2',price_per_kg:0,is_active:true},
+  {id:5,profile_code:'SB-C90_black',profile_name:'60 Right Angle Bay Corner',brand:'SBPL',system:'casement',gi_name:'',price_per_kg:112,is_active:true},
+  {id:6,profile_code:'SB-150MB2_black',profile_name:'150 Door Panel',brand:'SBPL',system:'door',gi_name:'',price_per_kg:145,is_active:true},
+  {id:7,profile_code:'107_black',profile_name:'Interlock',brand:'SBPL',system:'sliding',gi_name:'GI 1.2',price_per_kg:112,is_active:true},
+  {id:8,profile_code:'106_black',profile_name:'Single Glazing Bead',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:0,is_active:true},
+  {id:9,profile_code:'105_black',profile_name:'Sliding Mullion',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:88,is_active:true},
+  {id:10,profile_code:'104_black',profile_name:'Sliding Door Sash',brand:'SBPL',system:'door',gi_name:'',price_per_kg:132,is_active:true},
+  {id:11,profile_code:'103_black',profile_name:'Sliding Window Sash',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:118,is_active:true},
+  {id:12,profile_code:'ECO_102_black',profile_name:'3 Track Frame',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:98,is_active:true},
+  {id:13,profile_code:'101_black',profile_name:'2 Track Frame',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:95,is_active:true},
+  {id:14,profile_code:'SB-42SM_black',profile_name:'42 Sash Sliding Mullion 2',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:105,is_active:true},
+  {id:15,profile_code:'SB-2005_black',profile_name:'92 Sliding Door Sash Cover',brand:'SBPL',system:'door',gi_name:'',price_per_kg:142,is_active:true},
+  {id:16,profile_code:'SB-2004_black',profile_name:'66 Sliding Window Sash Cover',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:118,is_active:true},
+  {id:17,profile_code:'SB-2003_black',profile_name:'Sliding Single Glazed Bead',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:72,is_active:true},
+  {id:18,profile_code:'SB-2002_black',profile_name:'Sliding 22 MM Glass Bead',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:68,is_active:true},
+  {id:19,profile_code:'SB-2001_black',profile_name:'Sliding 12 MM Glass Bead',brand:'SBPL',system:'sliding',gi_name:'',price_per_kg:62,is_active:true},
+  {id:20,profile_code:'SB-M1_black',profile_name:'Monorail/Sliding Frame',brand:'SBPL',system:'fixed',gi_name:'GI 1.2',price_per_kg:155,is_active:true},
+];
+
+const GLASS_DATA = [
+  {id:1,name:'5MM Clear Toughened Glass',thickness_mm:5,glass_type:'clear',hsn_code:'7005',price_per_sqft:85},
+  {id:2,name:'8MM Clear Toughened Glass',thickness_mm:8,glass_type:'clear',hsn_code:'7005',price_per_sqft:50},
+  {id:3,name:'5+10MM Argon Gas+5T DGU',thickness_mm:20,glass_type:'dgu',hsn_code:'7005',price_per_sqft:180},
+  {id:4,name:'5MM Frosted Glass',thickness_mm:5,glass_type:'frosted',hsn_code:'7005',price_per_sqft:80},
+  {id:5,name:'5mm Frosted Toughened',thickness_mm:5,glass_type:'frosted',hsn_code:'7005',price_per_sqft:120},
+  {id:6,name:'6mm Clear Toughened Glass',thickness_mm:6,glass_type:'clear',hsn_code:'7005',price_per_sqft:110},
+  {id:7,name:'5mm Brown Tinted Toughened',thickness_mm:5,glass_type:'tinted',hsn_code:'7005',price_per_sqft:130},
+  {id:8,name:'12mm Clear Toughened Glass',thickness_mm:12,glass_type:'clear',hsn_code:'7005',price_per_sqft:120},
+  {id:9,name:'5+1.52 PVB+5T Laminated',thickness_mm:12,glass_type:'laminated',hsn_code:'7005',price_per_sqft:110},
+  {id:10,name:'5MM Acid Wash Toughened',thickness_mm:5,glass_type:'frosted',hsn_code:'7005',price_per_sqft:50},
+  {id:11,name:'4mm Plain Toughened Glass',thickness_mm:4,glass_type:'clear',hsn_code:'7005',price_per_sqft:130},
+  {id:12,name:'NO GLASS',thickness_mm:0,glass_type:'none',hsn_code:'7005',price_per_sqft:0},
+  {id:13,name:'5mm Plain Glass',thickness_mm:5,glass_type:'clear',hsn_code:'7005',price_per_sqft:130},
+  {id:14,name:'S167-5+10MM Argon+5 Black',thickness_mm:20,glass_type:'dgu',hsn_code:'7005',price_per_sqft:50},
+  {id:15,name:'6 MM Ceramic Toughened',thickness_mm:6,glass_type:'frosted',hsn_code:'7005',price_per_sqft:170},
+  {id:16,name:'5mm Frosted Glass Toughened',thickness_mm:5,glass_type:'frosted',hsn_code:'7005',price_per_sqft:150},
+  {id:17,name:'22 MM DGU With Toughened Glass',thickness_mm:22,glass_type:'dgu',hsn_code:'7005',price_per_sqft:180},
+  {id:18,name:'5mm Laminated Glass',thickness_mm:5,glass_type:'laminated',hsn_code:'7005',price_per_sqft:420},
+  {id:19,name:'5+1.52+5 Black Laminated',thickness_mm:12,glass_type:'laminated',hsn_code:'7005',price_per_sqft:50},
+  {id:20,name:'5mm Plain Toughened Glass',thickness_mm:5,glass_type:'clear',hsn_code:'7005',price_per_sqft:130},
+];
+
+const ACC_DATA = [
+  {id:1,type:'handle',name:'D-Dummy Sliding Handle',code:'',price:70},
+  {id:2,type:'handle',name:'C-Type Sliding Handle',code:'',price:60},
+  {id:3,type:'handle',name:'Touch Lock Handle',code:'',price:70},
+  {id:4,type:'roller',name:'Single Roller',code:'',price:10},
+  {id:5,type:'handle',name:'Shortneck L Handle',code:'',price:180},
+  {id:6,type:'hinge',name:'Door Hinge',code:'',price:60},
+  {id:7,type:'hinge',name:'Window Hinges',code:'hing001',price:70},
+  {id:8,type:'roller',name:'Double Wheel With Groove',code:'dwwoo1',price:50},
+  {id:9,type:'roller',name:'Double Wheel Adjustable With Groove',code:'adr',price:50},
+  {id:10,type:'handle',name:'D Handle With Key',code:'dhk',price:333},
+  {id:11,type:'handle',name:'Casement Door Handle With Key',code:'cdky',price:120},
+  {id:12,type:'handle',name:'Cosker Handle',code:'ch001',price:110},
+  {id:13,type:'handle',name:'Crescent Handle',code:'ch001',price:110},
+  {id:14,type:'handle',name:'Bathroom Door Handle',code:'bdh001',price:100},
+  {id:15,type:'handle',name:'Sliding Shotnet L Handle',code:'shlh',price:50},
+  {id:16,type:'handle',name:'Sliding L Handle',code:'slh001',price:50},
+  {id:17,type:'hinge',name:'3D Hinges',code:'3',price:200},
+  {id:18,type:'hinge',name:'Flat Hinge',code:'fh001',price:100},
+  {id:19,type:'hinge',name:'Concealed Hinge',code:'cd001',price:100},
+  {id:20,type:'hinge',name:'Butt Hinge',code:'',price:112},
+];
+
+const WEIGHT_DATA = [
+  {id:1,company:'SBPL',colour:'grey',hex:'#808080',price_per_kg:0},
+  {id:2,company:'SBPL',colour:'white',hex:'#FFFFFF',price_per_kg:128},
+  {id:3,company:'SBPL',colour:'walnut',hex:'#5C3317',price_per_kg:0},
+  {id:4,company:'SBPL',colour:'golden_oak',hex:'#C68E3E',price_per_kg:0},
+  {id:5,company:'SBPL',colour:'black',hex:'#1a1a1a',price_per_kg:0},
+];
+
+// ── STATE ──
+let currentTab = 'profiles';
+let currentFilter = 'all';
+let searchQuery = '';
+let selectedIds = new Set();
+let editingCell = null;
+let perPage = 20;
+let currentPage = 1;
+let sortCol = null;
+let sortDir = 'asc';
+let csvData = [];
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  renderAlertItems();
+  renderTable();
+});
+
+function renderAlertItems() {
+  const missing = PROFILES_DATA.filter(p => !p.price_per_kg).slice(0, 5);
+  document.getElementById('alertItems').innerHTML = missing.map(p =>
+    `<span class="alert-item-chip">🔩 ${p.profile_name}</span>`
+  ).join('');
+}
+
+// ── TABS ──
+function switchTab(tab, el) {
+  currentTab = tab;
+  currentFilter = 'all';
+  currentPage = 1;
+  selectedIds.clear();
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['profiles','glass','accessories','weights'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+
+  // Update search placeholder
+  const placeholders = {profiles:'Search profiles...',glass:'Search glass types...',accessories:'Search accessories...',weights:'Search colours...'};
+  document.getElementById('searchInput').placeholder = placeholders[tab] || 'Search...';
+
+  // Update filter chips
+  const chips = {
+    profiles: ['All','Sliding','Casement','Door','Fixed','Partition'],
+    glass: ['All','Clear','Frosted','DGU','Tinted','Laminated','None'],
+    accessories: ['All','Handle','Hinge','Roller','Lock','Seal'],
+    weights: ['All'],
+  };
+  document.getElementById('filterChips').innerHTML = chips[tab].map((c,i) =>
+    `<div class="chip ${i===0?'active':''}" onclick="setFilter('${c.toLowerCase()}',this)">${c}</div>`
+  ).join('');
+  currentFilter = 'all';
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  renderTable();
+}
+
+// ── FILTER + SEARCH ──
+function setFilter(f, el) {
+  currentFilter = f;
+  currentPage = 1;
+  document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+function filterTable() {
+  searchQuery = document.getElementById('searchInput').value.toLowerCase();
+  currentPage = 1;
+  renderTable();
+}
+
+function getFilteredData() {
+  let data;
+  if (currentTab === 'profiles') data = [...PROFILES_DATA];
+  else if (currentTab === 'glass') data = [...GLASS_DATA];
+  else if (currentTab === 'accessories') data = [...ACC_DATA];
+  else data = [...WEIGHT_DATA];
+
+  // Search
+  if (searchQuery) {
+    data = data.filter(item => Object.values(item).some(v =>
+      String(v).toLowerCase().includes(searchQuery)
+    ));
+  }
+
+  // Filter
+  if (currentFilter !== 'all') {
+    if (currentTab === 'profiles') data = data.filter(d => d.system === currentFilter);
+    else if (currentTab === 'glass') data = data.filter(d => d.glass_type === currentFilter);
+    else if (currentTab === 'accessories') data = data.filter(d => d.type === currentFilter);
+  }
+
+  // Sort
+  if (sortCol) {
+    data.sort((a, b) => {
+      let av = a[sortCol], bv = b[sortCol];
+      if (typeof av === 'string') av = av.toLowerCase();
+      if (typeof bv === 'string') bv = bv.toLowerCase();
+      return sortDir === 'asc' ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+    });
+  }
+  return data;
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = col; sortDir = 'asc'; }
+  renderTable();
+}
+
+function setPerPage(n) {
+  perPage = parseInt(n);
+  currentPage = 1;
+  renderTable();
+}
+
+// ── RENDER TABLE ──
+function renderTable() {
+  const data = getFilteredData();
+  const total = data.length;
+  const start = (currentPage - 1) * perPage;
+  const end = Math.min(start + perPage, total);
+  const pageData = data.slice(start, end);
+
+  document.getElementById('tableInfo').textContent = `Showing ${start+1}–${end} of ${total}`;
+  renderPagination(total);
+
+  if (currentTab === 'profiles') renderProfiles(pageData);
+  else if (currentTab === 'glass') renderGlass(pageData);
+  else if (currentTab === 'accessories') renderAccessories(pageData);
+  else renderWeights(pageData);
+}
+
+function renderProfiles(data) {
+  document.getElementById('profilesBody').innerHTML = data.map(p => `
+    <tr class="${!p.price_per_kg ? 'low-stock' : ''}" id="pr-${p.id}">
+      <td><input type="checkbox" class="row-check" data-id="${p.id}" onchange="toggleSelect(${p.id},this)"/></td>
+      <td><span class="td-code">${p.profile_code}</span></td>
+      <td class="td-main">${p.profile_name}</td>
+      <td><span style="font-size:11px;font-weight:600;background:var(--blue-pale);color:var(--blue);padding:2px 8px;border-radius:4px">${p.brand}</span></td>
+      <td><span class="sys-badge sys-${p.system}">${p.system}</span></td>
+      <td style="font-size:12px;color:var(--gray-400)">${p.gi_name || '—'}</td>
+      <td>
+        <div class="price-cell">
+          <input class="edit-input" id="price-${p.id}" type="number" value="${p.price_per_kg}" 
+            style="width:80px;display:none"
+            onblur="savePrice('profiles',${p.id},this)"
+            onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')cancelEdit(${p.id})"/>
+          <span class="price-display ${p.price_per_kg===0?'missing':''}" 
+            onclick="startEdit(${p.id})" id="pdisplay-${p.id}">
+            ${p.price_per_kg > 0 ? '₹'+p.price_per_kg : '⚠ Set price'}
+          </span>
+          <button class="save-btn" id="sbtn-${p.id}" onclick="savePrice('profiles',${p.id},document.getElementById('price-${p.id}'))">Save</button>
+        </div>
+      </td>
+      <td>${p.price_per_kg > 0 ? '<span class="alert-badge alert-ok">✓ Set</span>' : '<span class="alert-badge alert-zero">⚠ Missing</span>'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="startEdit(${p.id})">✏ Edit</button>
+          <button class="btn btn-red" style="padding:4px 8px;font-size:11px" onclick="deleteItem('profiles',${p.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderGlass(data) {
+  const typeColors = {clear:'var(--blue-pale);color:var(--blue)',frosted:'rgba(139,92,246,0.1);color:#8B5CF6',dgu:'var(--teal-pale);color:var(--teal)',tinted:'var(--amber-pale);color:var(--amber)',laminated:'var(--green-pale);color:var(--green)',none:'var(--gray-100);color:var(--gray-400)'};
+  document.getElementById('glassBody').innerHTML = data.map(g => {
+    const tc = typeColors[g.glass_type] || typeColors.none;
+    return `
+    <tr id="gl-${g.id}">
+      <td><input type="checkbox" class="row-check" data-id="${g.id}" onchange="toggleSelect(${g.id},this)"/></td>
+      <td class="td-main">${g.name}</td>
+      <td><span class="td-mono">${g.thickness_mm}mm</span></td>
+      <td><span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;background:${tc}">${g.glass_type}</span></td>
+      <td><span class="td-code">${g.hsn_code}</span></td>
+      <td>
+        <div class="price-cell">
+          <input class="edit-input" id="gprice-${g.id}" type="number" value="${g.price_per_sqft}"
+            style="width:80px;display:none"
+            onblur="savePrice('glass',${g.id},this)"
+            onkeydown="if(event.key==='Enter')this.blur()"/>
+          <span class="price-display ${g.price_per_sqft===0&&g.glass_type!=='none'?'zero':''}"
+            onclick="startEditGlass(${g.id})" id="gpdisplay-${g.id}">
+            ${g.glass_type==='none'?'—':'₹'+g.price_per_sqft+'/SqFt'}
+          </span>
+          <button class="save-btn" id="gsbtn-${g.id}" onclick="savePrice('glass',${g.id},document.getElementById('gprice-${g.id}'))">Save</button>
+        </div>
+      </td>
+      <td>${g.price_per_sqft > 0 || g.glass_type==='none' ? '<span class="alert-badge alert-ok">✓ Set</span>' : '<span class="alert-badge alert-zero">⚠ Zero</span>'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="startEditGlass(${g.id})">✏ Edit</button>
+          <button class="btn btn-red" style="padding:4px 8px;font-size:11px" onclick="deleteItem('glass',${g.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAccessories(data) {
+  document.getElementById('accBody').innerHTML = data.map(a => `
+    <tr id="ac-${a.id}">
+      <td><input type="checkbox" class="row-check" data-id="${a.id}" onchange="toggleSelect(${a.id},this)"/></td>
+      <td><span class="type-badge type-${a.type}">${a.type}</span></td>
+      <td class="td-main">${a.name}</td>
+      <td><span class="td-code">${a.code || '—'}</span></td>
+      <td>
+        <div class="price-cell">
+          <input class="edit-input" id="aprice-${a.id}" type="number" value="${a.price}"
+            style="width:80px;display:none"
+            onblur="savePrice('acc',${a.id},this)"
+            onkeydown="if(event.key==='Enter')this.blur()"/>
+          <span class="price-display ${a.price===0?'zero':''}"
+            onclick="startEditAcc(${a.id})" id="apdisplay-${a.id}">
+            ₹${a.price}
+          </span>
+          <button class="save-btn" id="asbtn-${a.id}" onclick="savePrice('acc',${a.id},document.getElementById('aprice-${a.id}'))">Save</button>
+        </div>
+      </td>
+      <td>${a.price > 0 ? '<span class="alert-badge alert-ok">✓ Set</span>' : '<span class="alert-badge alert-zero">⚠ Zero</span>'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="startEditAcc(${a.id})">✏ Edit</button>
+          <button class="btn btn-red" style="padding:4px 8px;font-size:11px" onclick="deleteItem('acc',${a.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderWeights(data) {
+  document.getElementById('weightBody').innerHTML = data.map((w, i) => `
+    <tr id="wt-${w.id}">
+      <td style="color:var(--gray-400);font-family:var(--font-m);font-size:12px">${i+1}</td>
+      <td><span style="font-size:12px;font-weight:600;background:var(--blue-pale);color:var(--blue);padding:2px 8px;border-radius:4px">${w.company}</span></td>
+      <td class="td-main" style="text-transform:capitalize">${w.colour.replace('_',' ')}</td>
+      <td>
+        <div class="colour-swatch">
+          <div class="swatch" style="background:${w.hex};${w.colour==='white'?'border:1px solid #ddd':''}"></div>
+          <span style="font-family:var(--font-m);font-size:11px;color:var(--gray-400)">${w.hex}</span>
+        </div>
+      </td>
+      <td>
+        <div class="price-cell">
+          <input class="edit-input" id="wprice-${w.id}" type="number" value="${w.price_per_kg}"
+            style="width:80px;display:none"
+            onblur="saveWeightPrice(${w.id},this)"
+            onkeydown="if(event.key==='Enter')this.blur()"/>
+          <span class="price-display ${w.price_per_kg===0?'missing':''}"
+            onclick="startEditWeight(${w.id})" id="wpdisplay-${w.id}"
+            title="Click to edit">
+            ${w.price_per_kg > 0 ? '₹'+w.price_per_kg+'/kg' : '⚠ Not set'}
+          </span>
+          <button class="save-btn" id="wsbtn-${w.id}" onclick="saveWeightPrice(${w.id},document.getElementById('wprice-${w.id}'))">Save</button>
+        </div>
+      </td>
+      <td>${w.price_per_kg > 0 ? '<span class="alert-badge alert-ok">✓ Set</span>' : '<span class="alert-badge alert-zero">⚠ Missing</span>'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" onclick="startEditWeight(${w.id})">✏ Edit</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── INLINE EDIT ──
+function startEdit(id) {
+  const input = document.getElementById('price-' + id);
+  const display = document.getElementById('pdisplay-' + id);
+  const saveBtn = document.getElementById('sbtn-' + id);
+  if (!input) return;
+  display.style.display = 'none';
+  input.style.display = 'block';
+  saveBtn.classList.add('show');
+  input.focus();
+  input.select();
+}
+
+function startEditGlass(id) {
+  const input = document.getElementById('gprice-' + id);
+  const display = document.getElementById('gpdisplay-' + id);
+  const saveBtn = document.getElementById('gsbtn-' + id);
+  if (!input) return;
+  display.style.display = 'none';
+  input.style.display = 'block';
+  saveBtn.classList.add('show');
+  input.focus();input.select();
+}
+
+function startEditAcc(id) {
+  const input = document.getElementById('aprice-' + id);
+  const display = document.getElementById('apdisplay-' + id);
+  const saveBtn = document.getElementById('asbtn-' + id);
+  if (!input) return;
+  display.style.display = 'none';
+  input.style.display = 'block';
+  saveBtn.classList.add('show');
+  input.focus();input.select();
+}
+
+function startEditWeight(id) {
+  const input = document.getElementById('wprice-' + id);
+  const display = document.getElementById('wpdisplay-' + id);
+  const saveBtn = document.getElementById('wsbtn-' + id);
+  if (!input) return;
+  display.style.display = 'none';
+  input.style.display = 'block';
+  saveBtn.classList.add('show');
+  input.focus();input.select();
+}
+
+function savePrice(type, id, inputEl) {
+  const val = parseFloat(inputEl.value) || 0;
+  let display, saveBtn, dataset;
+
+  if (type === 'profiles') {
+    const item = PROFILES_DATA.find(p => p.id === id);
+    if (item) item.price_per_kg = val;
+    display = document.getElementById('pdisplay-' + id);
+    saveBtn = document.getElementById('sbtn-' + id);
+    if (display) {
+      display.textContent = val > 0 ? '₹' + val : '⚠ Set price';
+      display.className = 'price-display ' + (val === 0 ? 'missing' : '');
+    }
+  } else if (type === 'glass') {
+    const item = GLASS_DATA.find(g => g.id === id);
+    if (item) item.price_per_sqft = val;
+    display = document.getElementById('gpdisplay-' + id);
+    saveBtn = document.getElementById('gsbtn-' + id);
+    if (display) {
+      display.textContent = val > 0 ? '₹' + val + '/SqFt' : '⚠ Zero';
+      display.className = 'price-display ' + (val === 0 ? 'zero' : '');
+    }
+  } else if (type === 'acc') {
+    const item = ACC_DATA.find(a => a.id === id);
+    if (item) item.price = val;
+    display = document.getElementById('apdisplay-' + id);
+    saveBtn = document.getElementById('asbtn-' + id);
+    if (display) {
+      display.textContent = '₹' + val;
+      display.className = 'price-display ' + (val === 0 ? 'zero' : '');
+    }
+  }
+
+  if (display) display.style.display = 'inline-flex';
+  if (inputEl) inputEl.style.display = 'none';
+  if (saveBtn) saveBtn.classList.remove('show');
+
+  // Simulate Supabase save
+  showToast(`₹${val} saved ✓`, 'success');
+  updateStats();
+}
+
+function saveWeightPrice(id, inputEl) {
+  const val = parseFloat(inputEl.value) || 0;
+  const item = WEIGHT_DATA.find(w => w.id === id);
+  if (item) item.price_per_kg = val;
+  const display = document.getElementById('wpdisplay-' + id);
+  const saveBtn = document.getElementById('wsbtn-' + id);
+  if (display) {
+    display.textContent = val > 0 ? '₹' + val + '/kg' : '⚠ Not set';
+    display.className = 'price-display ' + (val === 0 ? 'missing' : '');
+    display.style.display = 'inline-flex';
+  }
+  if (inputEl) inputEl.style.display = 'none';
+  if (saveBtn) saveBtn.classList.remove('show');
+  showToast(`Weight price ₹${val}/kg saved ✓`, 'success');
+  updateStats();
+}
+
+function cancelEdit(id) {
+  const input = document.getElementById('price-' + id);
+  const display = document.getElementById('pdisplay-' + id);
+  const saveBtn = document.getElementById('sbtn-' + id);
+  if (input) input.style.display = 'none';
+  if (display) display.style.display = 'inline-flex';
+  if (saveBtn) saveBtn.classList.remove('show');
+}
+
+function updateStats() {
+  const missing = PROFILES_DATA.filter(p => !p.price_per_kg).length;
+  document.getElementById('profileMissing').textContent = missing > 0 ? `${missing} missing price` : 'All priced ✓';
+  document.getElementById('profileMissing').style.background = missing > 0 ? 'var(--red-pale)' : 'var(--green-pale)';
+  document.getElementById('profileMissing').style.color = missing > 0 ? 'var(--red)' : 'var(--green)';
+  if (missing === 0) document.getElementById('alertBanner').style.display = 'none';
+  renderAlertItems();
+}
+
+// ── SELECT & BULK ──
+function toggleSelect(id, cb) {
+  if (cb.checked) selectedIds.add(id);
+  else selectedIds.delete(id);
+  updateBulkBar();
+}
+
+function toggleSelectAll(cb) {
+  const checks = document.querySelectorAll('.row-check');
+  checks.forEach(c => {
+    c.checked = cb.checked;
+    const id = parseInt(c.dataset.id);
+    if (cb.checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+  });
+  updateBulkBar();
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+  const selectAll = document.getElementById('selectAll');
+  if (selectAll) selectAll.checked = false;
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  document.getElementById('bulkCount').textContent = selectedIds.size;
+  if (selectedIds.size > 0) bar.classList.add('show');
+  else bar.classList.remove('show');
+}
+
+function applyBulkPrice() {
+  const pct = parseFloat(document.getElementById('bulkPct').value);
+  if (!pct || isNaN(pct)) { showToast('Enter a valid percentage', 'error'); return; }
+  let count = 0;
+  if (currentTab === 'profiles') {
+    PROFILES_DATA.forEach(p => {
+      if (selectedIds.has(p.id) && p.price_per_kg > 0) {
+        p.price_per_kg = Math.round(p.price_per_kg * (1 + pct/100));
+        count++;
+      }
+    });
+  } else if (currentTab === 'glass') {
+    GLASS_DATA.forEach(g => {
+      if (selectedIds.has(g.id) && g.price_per_sqft > 0) {
+        g.price_per_sqft = Math.round(g.price_per_sqft * (1 + pct/100));
+        count++;
+      }
+    });
+  } else if (currentTab === 'accessories') {
+    ACC_DATA.forEach(a => {
+      if (selectedIds.has(a.id) && a.price > 0) {
+        a.price = Math.round(a.price * (1 + pct/100));
+        count++;
+      }
+    });
+  }
+  clearSelection();
+  renderTable();
+  showToast(`${count} prices updated by ${pct > 0 ? '+' : ''}${pct}% ✓`, 'success');
+}
+
+function deleteSelected() {
+  if (!selectedIds.size) return;
+  if (!confirm(`Delete ${selectedIds.size} selected items?`)) return;
+  if (currentTab === 'profiles') selectedIds.forEach(id => { const i = PROFILES_DATA.findIndex(p => p.id === id); if (i > -1) PROFILES_DATA.splice(i,1); });
+  else if (currentTab === 'glass') selectedIds.forEach(id => { const i = GLASS_DATA.findIndex(g => g.id === id); if (i > -1) GLASS_DATA.splice(i,1); });
+  else if (currentTab === 'accessories') selectedIds.forEach(id => { const i = ACC_DATA.findIndex(a => a.id === id); if (i > -1) ACC_DATA.splice(i,1); });
+  clearSelection();
+  renderTable();
+  showToast('Items deleted', 'error');
+}
+
+function deleteItem(type, id) {
+  if (!confirm('Delete this item?')) return;
+  if (type === 'profiles') { const i = PROFILES_DATA.findIndex(p => p.id === id); if (i > -1) PROFILES_DATA.splice(i,1); }
+  else if (type === 'glass') { const i = GLASS_DATA.findIndex(g => g.id === id); if (i > -1) GLASS_DATA.splice(i,1); }
+  else if (type === 'acc') { const i = ACC_DATA.findIndex(a => a.id === id); if (i > -1) ACC_DATA.splice(i,1); }
+  renderTable();
+  showToast('Item deleted', 'error');
+}
+
+// ── PAGINATION ──
+function renderPagination(total) {
+  const pages = Math.ceil(total / perPage);
+  const pag = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+  let html = '';
+  if (currentPage > 1) html += `<button class="pg" onclick="goPage(${currentPage-1})">‹</button>`;
+  for (let i = 1; i <= Math.min(pages, 7); i++) {
+    if (i === 4 && pages > 7) { html += `<button class="pg" disabled>…</button>`; i = pages - 2; }
+    html += `<button class="pg ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  if (currentPage < pages) html += `<button class="pg" onclick="goPage(${currentPage+1})">›</button>`;
+  pag.innerHTML = html;
+}
+
+function goPage(n) { currentPage = n; renderTable(); window.scrollTo(0,0); }
+
+// ── CSV ──
+function openCSVModal() { document.getElementById('csvModal').classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function handleCSVUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+    csvData = lines.slice(1).map((line, i) => {
+      const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
+      const row = {};
+      headers.forEach((h, j) => row[h] = vals[j] || '');
+      row._valid = vals.length === headers.length && vals[0];
+      row._row = i + 2;
+      return row;
+    });
+    renderCSVPreview(headers, csvData);
+    document.getElementById('importConfirmBtn').style.display = 'inline-flex';
+    document.getElementById('csvModal').classList.add('show');
+  };
+  reader.readAsText(file);
+}
+
+function renderCSVPreview(headers, data) {
+  const valid = data.filter(r => r._valid).length;
+  const invalid = data.length - valid;
+  document.getElementById('csvPreviewContent').innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="background:var(--green-pale);color:var(--green);padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600">✓ ${valid} valid rows</span>
+      ${invalid > 0 ? `<span style="background:var(--red-pale);color:var(--red);padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600">✕ ${invalid} invalid rows</span>` : ''}
+      <span style="background:var(--blue-pale);color:var(--blue);padding:4px 12px;border-radius:100px;font-size:12px;font-weight:600">${headers.length} columns detected</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="csv-preview-table">
+        <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}<th>Status</th></tr></thead>
+        <tbody>${data.slice(0,10).map(row => `
+          <tr class="${row._valid?'csv-row-valid':'csv-row-error'}">
+            ${headers.map(h=>`<td>${row[h]||'—'}</td>`).join('')}
+            <td>${row._valid?'<span style="color:var(--green);font-weight:600">✓</span>':'<span style="color:var(--red);font-weight:600">✕</span>'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+    </div>
+    ${data.length > 10 ? `<p style="font-size:12px;color:var(--gray-400);margin-top:10px">Showing first 10 of ${data.length} rows</p>` : ''}
+  `;
+}
+
+function confirmImport() {
+  const valid = csvData.filter(r => r._valid);
+  closeModal('csvModal');
+  showToast(`${valid.length} items imported successfully ✓`, 'success');
+  renderTable();
+}
+
+// ── ADD ITEM ──
+function openAddModal() {
+  document.getElementById('addModalTitle').textContent =
+    currentTab === 'profiles' ? '＋ Add Profile' :
+    currentTab === 'glass' ? '＋ Add Glass Type' :
+    currentTab === 'accessories' ? '＋ Add Accessory' : '＋ Add Weight Price';
+
+  const forms = {
+    profiles: `
+      <div class="form-grid">
+        <div class="form-group"><label class="lbl">Profile Code *</label><input class="inp" id="new_code" placeholder="SB-BP01_white"/></div>
+        <div class="form-group"><label class="lbl">Profile Name *</label><input class="inp" id="new_name" placeholder="Baypole"/></div>
+        <div class="form-group"><label class="lbl">Brand</label><input class="inp" id="new_brand" value="SBPL"/></div>
+        <div class="form-group"><label class="lbl">System</label>
+          <select class="inp sel" id="new_system">
+            <option>sliding</option><option>casement</option><option>door</option><option>fixed</option><option>partition</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="lbl">GI Name</label><input class="inp" id="new_gi" placeholder="GI 1.2"/></div>
+        <div class="form-group"><label class="lbl">Price/kg ₹</label><input class="inp" id="new_price" type="number" placeholder="0"/></div>
+      </div>`,
+    glass: `
+      <div class="form-grid">
+        <div class="form-group full"><label class="lbl">Glass Name *</label><input class="inp" id="new_name" placeholder="5MM Clear Toughened Glass"/></div>
+        <div class="form-group"><label class="lbl">Thickness (mm)</label><input class="inp" id="new_thickness" type="number" placeholder="5"/></div>
+        <div class="form-group"><label class="lbl">Type</label>
+          <select class="inp sel" id="new_glass_type">
+            <option>clear</option><option>frosted</option><option>dgu</option><option>tinted</option><option>laminated</option><option>none</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="lbl">HSN Code</label><input class="inp" id="new_hsn" value="7005"/></div>
+        <div class="form-group"><label class="lbl">Price/SqFt ₹</label><input class="inp" id="new_price" type="number" placeholder="0"/></div>
+      </div>`,
+    accessories: `
+      <div class="form-grid">
+        <div class="form-group"><label class="lbl">Type *</label>
+          <select class="inp sel" id="new_type">
+            <option>handle</option><option>hinge</option><option>roller</option><option>lock</option><option>seal</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="lbl">Name *</label><input class="inp" id="new_name" placeholder="D Handle With Key"/></div>
+        <div class="form-group"><label class="lbl">Code</label><input class="inp" id="new_code" placeholder="dhk"/></div>
+        <div class="form-group"><label class="lbl">Price ₹</label><input class="inp" id="new_price" type="number" placeholder="0"/></div>
+      </div>`,
+    weights: `
+      <div class="form-grid">
+        <div class="form-group"><label class="lbl">Company</label><input class="inp" id="new_company" value="SBPL"/></div>
+        <div class="form-group"><label class="lbl">Colour *</label><input class="inp" id="new_colour" placeholder="silver"/></div>
+        <div class="form-group"><label class="lbl">Hex Code</label><input class="inp" id="new_hex" type="color" value="#808080" style="height:42px;padding:4px 8px"/></div>
+        <div class="form-group"><label class="lbl">Price/kg ₹</label><input class="inp" id="new_price" type="number" placeholder="0"/></div>
+      </div>`,
+  };
+
+  document.getElementById('addModalForm').innerHTML = forms[currentTab] || '';
+  document.getElementById('addModal').classList.add('show');
+}
+
+function saveNewItem() {
+  const newId = Date.now();
+  const price = parseFloat(document.getElementById('new_price')?.value || 0);
+  const name = document.getElementById('new_name')?.value;
+  if (!name) { showToast('Name is required', 'error'); return; }
+
+  if (currentTab === 'profiles') {
+    PROFILES_DATA.unshift({id:newId,profile_code:document.getElementById('new_code')?.value||'',profile_name:name,brand:document.getElementById('new_brand')?.value||'SBPL',system:document.getElementById('new_system')?.value||'sliding',gi_name:document.getElementById('new_gi')?.value||'',price_per_kg:price,is_active:true});
+  } else if (currentTab === 'glass') {
+    GLASS_DATA.unshift({id:newId,name,thickness_mm:parseFloat(document.getElementById('new_thickness')?.value||0),glass_type:document.getElementById('new_glass_type')?.value||'clear',hsn_code:document.getElementById('new_hsn')?.value||'7005',price_per_sqft:price});
+  } else if (currentTab === 'accessories') {
+    ACC_DATA.unshift({id:newId,type:document.getElementById('new_type')?.value||'handle',name,code:document.getElementById('new_code')?.value||'',price});
+  } else {
+    WEIGHT_DATA.push({id:newId,company:document.getElementById('new_company')?.value||'SBPL',colour:document.getElementById('new_colour')?.value||'',hex:document.getElementById('new_hex')?.value||'#808080',price_per_kg:price});
+  }
+  closeModal('addModal');
+  renderTable();
+  showToast(`${name} added ✓`, 'success');
+}
+
+// ── CSV DOWNLOAD ──
+function downloadCSV() {
+  let csv, filename;
+  if (currentTab === 'profiles') {
+    csv = 'profile_code,profile_name,brand,system,gi_name,price_per_kg\n' + PROFILES_DATA.map(p=>`${p.profile_code},${p.profile_name},${p.brand},${p.system},${p.gi_name},${p.price_per_kg}`).join('\n');
+    filename = 'qlekha-profiles.csv';
+  } else if (currentTab === 'glass') {
+    csv = 'name,thickness_mm,glass_type,hsn_code,price_per_sqft\n' + GLASS_DATA.map(g=>`${g.name},${g.thickness_mm},${g.glass_type},${g.hsn_code},${g.price_per_sqft}`).join('\n');
+    filename = 'qlekha-glass.csv';
+  } else if (currentTab === 'accessories') {
+    csv = 'type,name,code,price\n' + ACC_DATA.map(a=>`${a.type},${a.name},${a.code},${a.price}`).join('\n');
+    filename = 'qlekha-accessories.csv';
+  } else {
+    csv = 'company,colour,price_per_kg\n' + WEIGHT_DATA.map(w=>`${w.company},${w.colour},${w.price_per_kg}`).join('\n');
+    filename = 'qlekha-weight-prices.csv';
+  }
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast(`${filename} downloaded ✓`, 'success');
+}
+
+// ── TOAST ──
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+</script>
+</body>
+</html>
