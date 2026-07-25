@@ -1,226 +1,242 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const STAGES = [
-  { key:'new',         label:'🆕 New',          color:'#6366F1', bg:'rgba(99,102,241,0.1)' },
-  { key:'contacted',   label:'📞 Contacted',     color:'#FFB400', bg:'rgba(255,180,0,0.1)' },
-  { key:'quoted',      label:'📋 Quoted',        color:'#1A6FE8', bg:'rgba(26,111,232,0.08)' },
-  { key:'negotiating', label:'🤝 Negotiating',   color:'#8B5CF6', bg:'rgba(139,92,246,0.1)' },
-  { key:'won',         label:'✅ Won',           color:'#22C55E', bg:'rgba(34,197,94,0.1)' },
-]
+const C = {
+  navy:'#0B1F3A', blue:'#1A6FE8', teal:'#0EA5A0', amber:'#FFB400',
+  green:'#22C55E', red:'#EF4444', bg:'#F0F4F8', white:'#fff',
+  g100:'#E8EDF3', g200:'#D1D9E6', g400:'#8A9BB5', g600:'#4A5568', g50:'#F8FAFC',
+  purp:'#8B5CF6',
+}
+const fmt = (n) => n>=100000?'\u20b9'+(n/100000).toFixed(1)+'L':n>=1000?'\u20b9'+(n/1000).toFixed(0)+'K':'\u20b9'+(n||0)
 
-const VIEWS = ['Pipeline','Clients','Follow-ups','Activities']
+function AddClientModal({ companyId, onClose, onDone }) {
+  const [form, setForm] = useState({name:'',phone:'',email:'',address:'',city:'',tag:'residential',gst_number:''})
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
+  const upd = (k,v) => setForm(p=>({...p,[k]:v}))
+  const inp = {width:'100%',padding:'9px 12px',borderRadius:8,border:'1.5px solid '+C.g200,fontSize:13,fontFamily:'Inter,sans-serif',color:C.navy,outline:'none',boxSizing:'border-box',marginBottom:12}
+  const lb = {fontSize:11,fontWeight:700,color:C.g400,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}
+  const TAGS = ['residential','commercial','builder','dealer','govt','other']
 
-const S = {
-  card: { background:'#fff', border:'1px solid #E8EDF3', borderRadius:12, padding:16, cursor:'pointer', transition:'all 0.2s' },
-  pill: (color, bg) => ({ display:'inline-flex', padding:'2px 8px', borderRadius:100, fontSize:10, fontWeight:700, color, background:bg }),
-  mono: { fontFamily:'JetBrains Mono,monospace', fontWeight:500 },
+  async function submit() {
+    if (!form.name.trim()) return setErr('Client name is required.')
+    setLoading(true)
+    const { error } = await supabase.from('clients').insert({ ...form, company_id: companyId, is_active: true })
+    setLoading(false)
+    if (error) return setErr(error.message)
+    onDone()
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+      <div style={{background:C.white,borderRadius:16,width:'100%',maxWidth:460,boxShadow:'0 24px 64px rgba(11,31,58,0.2)',overflow:'hidden',maxHeight:'90vh',display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'14px 18px',borderBottom:'1px solid '+C.g100,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:C.navy}}>Add Client</div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:18,color:C.g400}}>&#215;</button>
+        </div>
+        <div style={{padding:18,overflowY:'auto'}}>
+          {err&&<div style={{background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'9px 12px',fontSize:13,color:C.red,marginBottom:12}}>{err}</div>}
+          <label style={lb}>Name *</label><input value={form.name} onChange={e=>upd('name',e.target.value)} placeholder="Client or company name" style={inp}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 12px'}}>
+            <div><label style={lb}>Phone</label><input type="tel" value={form.phone} onChange={e=>upd('phone',e.target.value)} placeholder="+91 98765 43210" style={inp}/></div>
+            <div><label style={lb}>Email</label><input type="email" value={form.email} onChange={e=>upd('email',e.target.value)} placeholder="client@email.com" style={inp}/></div>
+          </div>
+          <label style={lb}>Address</label><input value={form.address} onChange={e=>upd('address',e.target.value)} placeholder="Street, area" style={inp}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 12px'}}>
+            <div><label style={lb}>City</label><input value={form.city} onChange={e=>upd('city',e.target.value)} placeholder="Bengaluru" style={inp}/></div>
+            <div><label style={lb}>GST Number</label><input value={form.gst_number} onChange={e=>upd('gst_number',e.target.value)} placeholder="Optional" style={inp}/></div>
+          </div>
+          <label style={lb}>Tag</label>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16}}>
+            {TAGS.map(t=><button key={t} onClick={()=>upd('tag',t)} style={{padding:'5px 10px',borderRadius:7,border:'1.5px solid '+(form.tag===t?C.blue:C.g200),background:form.tag===t?C.blue+'10':C.white,color:form.tag===t?C.blue:C.g600,fontSize:11,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>)}
+          </div>
+          <button onClick={submit} disabled={loading} style={{width:'100%',padding:12,borderRadius:10,border:'none',background:C.blue,color:'#fff',fontSize:13,fontWeight:700,cursor:loading?'default':'pointer',fontFamily:'Syne,sans-serif'}}>
+            {loading?'Saving...':'Add Client'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function CRM() {
-  const [view, setView] = useState('Pipeline')
-  const [leads, setLeads] = useState([])
+  const [tab, setTab] = useState('clients')
   const [clients, setClients] = useState([])
+  const [leads, setLeads] = useState([])
   const [loading, setLoading] = useState(true)
-  const [panel, setPanel] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [search, setSearch] = useState('')
+  const [addClient, setAddClient] = useState(false)
+  const [selClient, setSelClient] = useState(null)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(()=>{load()},[])
 
-  async function loadData() {
+  async function load() {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: ud } = await supabase.from('users').select('company_id').eq('id', user.id).single()
-    if (!ud) return setLoading(false)
-    const cid = ud.company_id
-    const [lr, cr] = await Promise.all([
-      supabase.from('leads').select('*').eq('company_id', cid).order('created_at', { ascending: false }),
-      supabase.from('clients').select('*').eq('company_id', cid).order('name'),
+    const{data:{user}}=await supabase.auth.getUser()
+    if(!user)return setLoading(false)
+    const{data:ud}=await supabase.from('users').select('company_id,companies(name)').eq('id',user.id).single()
+    if(!ud)return setLoading(false)
+    setProfile(ud)
+    const cid=ud.company_id
+    const[cr,lr]=await Promise.all([
+      supabase.from('clients').select('*').eq('company_id',cid).order('created_at',{ascending:false}),
+      supabase.from('leads').select('*').eq('company_id',cid).order('created_at',{ascending:false}),
     ])
-    setLeads(lr.data || [])
-    setClients(cr.data || [])
+    setClients(cr.data||[])
+    setLeads(lr.data||[])
     setLoading(false)
   }
 
-  async function updateLeadStatus(id, status) {
-    await supabase.from('leads').update({ status }).eq('id', id)
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+  const filteredClients = clients.filter(c=>[c.name,c.phone,c.city,c.email].some(v=>v?.toLowerCase().includes(search.toLowerCase())))
+  const filteredLeads = leads.filter(l=>[l.name,l.phone,l.source].some(v=>v?.toLowerCase().includes(search.toLowerCase())))
+
+  const TAG_COLORS = {
+    residential: {bg:C.blue+'15',c:C.blue},
+    commercial:  {bg:C.teal+'15',c:C.teal},
+    builder:     {bg:C.purp+'15',c:C.purp},
+    dealer:      {bg:C.amber+'15',c:C.amber},
+    govt:        {bg:C.green+'15',c:C.green},
+    other:       {bg:C.g100,c:C.g400},
+  }
+  const LEAD_STATUS = {
+    open:       {bg:'rgba(26,111,232,0.1)',c:C.blue},
+    contacted:  {bg:'rgba(14,165,160,0.1)',c:C.teal},
+    quoted:     {bg:'rgba(139,92,246,0.1)',c:C.purp},
+    won:        {bg:'rgba(34,197,94,0.1)',c:C.green},
+    lost:       {bg:'rgba(239,68,68,0.08)',c:C.red},
+    on_hold:    {bg:'rgba(255,180,0,0.1)',c:C.amber},
   }
 
-  const byStage = (stage) => leads.filter(l => l.status === stage)
-  const overdue = leads.filter(l => l.follow_up_date && new Date(l.follow_up_date) < new Date() && !['won','lost'].includes(l.status))
-
-  if (loading) return <div style={{ padding:60, textAlign:'center', color:'#8A9BB5' }}>Loading CRM...</div>
-
   return (
-    <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexWrap:'wrap', gap:12 }}>
-        <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:20, fontWeight:700 }}>CRM</h2>
-        <div style={{ display:'flex', gap:8 }}>
-          <button style={{ padding:'8px 16px', borderRadius:8, border:'1px solid #E8EDF3', background:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>＋ Add Lead</button>
-          <button style={{ padding:'8px 16px', borderRadius:8, border:'none', background:'#1A6FE8', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>📝 Log Activity</button>
+    <div style={{fontFamily:'Inter,sans-serif'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
+        <h2 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.navy}}>CRM</h2>
+        <div style={{display:'flex',gap:8}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search clients..." style={{padding:'8px 12px',borderRadius:8,border:'1px solid '+C.g200,fontSize:13,outline:'none',width:200,fontFamily:'Inter,sans-serif'}}/>
+          {tab==='clients'&&<button onClick={()=>setAddClient(true)} style={{background:C.blue,color:'#fff',border:'none',padding:'8px 16px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>+ Add Client</button>}
         </div>
       </div>
 
-      {overdue.length > 0 && (
-        <div style={{ background:'linear-gradient(135deg,#7f1d1d,#991b1b)', borderRadius:12, padding:'12px 18px', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
-          <span style={{ fontSize:20 }}>⚠️</span>
-          <div style={{ flex:1, color:'#fff' }}>
-            <div style={{ fontWeight:700, fontSize:13 }}>{overdue.length} follow-up{overdue.length > 1 ? 's' : ''} overdue</div>
-            <div style={{ fontSize:11, opacity:0.7, marginTop:2 }}>{overdue.map(l => l.name).join(', ')}</div>
+      {/* Summary */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:20}}>
+        {[
+          {i:'&#128100;',v:String(clients.length),l:'Total Clients',c:C.blue},
+          {i:'&#127919;',v:String(leads.filter(l=>l.status==='open').length),l:'Open Leads',c:C.teal},
+          {i:'&#127881;',v:String(leads.filter(l=>l.status==='won').length),l:'Won Leads',c:C.green},
+          {i:'&#128176;',v:fmt(clients.reduce((s,c)=>s+(c.total_billed||0),0)),l:'Total Billed',c:C.amber},
+        ].map(k=>(
+          <div key={k.l} style={{background:C.white,borderRadius:12,padding:14,border:'1px solid '+C.g100,borderLeft:'3px solid '+k.c}}>
+            <div style={{fontSize:18,marginBottom:6}} dangerouslySetInnerHTML={{__html:k.i}}/>
+            <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:18,fontWeight:500,color:C.navy,marginBottom:2}}>{k.v}</div>
+            <div style={{fontSize:11,color:C.g400}}>{k.l}</div>
           </div>
-        </div>
-      )}
-
-      {/* View Tabs */}
-      <div style={{ display:'flex', background:'#fff', border:'1px solid #E8EDF3', borderRadius:12, padding:4, width:'fit-content', marginBottom:20, gap:0 }}>
-        {VIEWS.map(v => (
-          <button key={v} onClick={() => setView(v)} style={{ padding:'7px 16px', borderRadius:8, border:'none', cursor:'pointer', fontSize:13, fontWeight:600, background: view === v ? '#0B1F3A' : 'transparent', color: view === v ? '#fff' : '#8A9BB5' }}>{v}</button>
         ))}
       </div>
 
-      {/* Pipeline View */}
-      {view === 'Pipeline' && (
-        <div>
-          {/* Stats */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:20 }}>
-            {STAGES.map(s => (
-              <div key={s.key} style={{ background:'#fff', border:'1px solid #E8EDF3', borderRadius:12, padding:'12px 14px', borderTop:`3px solid ${s.color}` }}>
-                <div style={{ ...S.mono, fontSize:22 }}>{byStage(s.key).length || 0}</div>
-                <div style={{ fontSize:11, color:'#8A9BB5', marginTop:2 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
+      {/* Tabs */}
+      <div style={{display:'flex',gap:0,background:C.white,border:'1px solid '+C.g100,borderRadius:10,padding:3,marginBottom:16,width:'fit-content'}}>
+        {[{k:'clients',l:'Clients'},{k:'leads',l:'Leads'}].map(t=>(
+          <button key={t.k} onClick={()=>setTab(t.k)} style={{padding:'7px 20px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:600,background:tab===t.k?C.navy:'transparent',color:tab===t.k?'#fff':C.g400,transition:'all 0.15s'}}>
+            {t.l}
+          </button>
+        ))}
+      </div>
 
-          {/* Kanban */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, minHeight:400 }}>
-            {STAGES.map(stage => (
-              <div key={stage.key} style={{ background:'#F8FAFC', border:'1px solid #E8EDF3', borderRadius:12, overflow:'hidden' }}>
-                <div style={{ padding:'10px 12px', borderBottom:'1px solid #E8EDF3', borderTop:`3px solid ${stage.color}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                  <span style={{ fontSize:12, fontWeight:700, color:stage.color }}>{stage.label}</span>
-                  <span style={{ ...S.pill(stage.color, stage.bg), fontSize:10 }}>{byStage(stage.key).length}</span>
-                </div>
-                <div style={{ padding:8, display:'flex', flexDirection:'column', gap:8 }}>
-                  {byStage(stage.key).length === 0 ? (
-                    <div style={{ padding:'20px 8px', textAlign:'center', color:'#8A9BB5', fontSize:12 }}>No leads</div>
-                  ) : byStage(stage.key).map(lead => (
-                    <div key={lead.id} style={{ ...S.card, padding:12 }} onClick={() => setPanel(lead)}>
-                      <div style={{ fontWeight:600, fontSize:13, marginBottom:2 }}>{lead.name}</div>
-                      <div style={{ fontSize:11, color:'#8A9BB5' }}>{lead.phone}</div>
-                      {lead.value_estimate && <div style={{ ...S.mono, fontSize:12, marginTop:6 }}>~₹{lead.value_estimate?.toLocaleString('en-IN')}</div>}
-                      {lead.follow_up_date && (
-                        <div style={{ fontSize:10, marginTop:6, color: new Date(lead.follow_up_date) < new Date() ? '#EF4444' : '#8A9BB5', fontWeight:600 }}>
-                          📅 {new Date(lead.follow_up_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <button style={{ width:'100%', padding:8, border:'1.5px dashed #D1D9E6', borderRadius:8, background:'transparent', cursor:'pointer', fontSize:12, color:'#8A9BB5' }}>＋ Add</button>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Clients table */}
+      {tab==='clients'&&(
+        <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}>
+          {loading?<div style={{padding:40,textAlign:'center',color:C.g400}}>Loading...</div>:filteredClients.length===0?(
+            <div style={{padding:60,textAlign:'center'}}>
+              <div style={{fontSize:40,marginBottom:12}}>&#128100;</div>
+              <p style={{color:C.g400,marginBottom:16}}>{search?'No clients match "'+search+'"':'No clients yet.'}</p>
+              {!search&&<button onClick={()=>setAddClient(true)} style={{background:C.blue,color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>Add First Client</button>}
+            </div>
+          ):(
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse'}}>
+                <thead><tr style={{background:C.g50}}>{['Client','Phone','City','Tag','Quotes','Total Billed','Balance','Actions'].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.g400,borderBottom:'1px solid '+C.g100}}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {filteredClients.map((c,i)=>{
+                    const tc = TAG_COLORS[c.tag]||TAG_COLORS.other
+                    const balance = (c.total_billed||0)-(c.total_paid||0)
+                    return(
+                      <tr key={c.id} style={{borderBottom:'1px solid '+C.g50,cursor:'pointer'}} onClick={()=>setSelClient(selClient?.id===c.id?null:c)}>
+                        <td style={{padding:'12px 14px'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10}}>
+                            <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0}}>
+                              {(c.name||'?')[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{fontWeight:600,fontSize:13,color:C.navy}}>{c.name}</div>
+                              <div style={{fontSize:11,color:C.g400}}>{c.email||''}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{padding:'12px 14px',fontSize:12,color:C.g600}}>{c.phone||'—'}</td>
+                        <td style={{padding:'12px 14px',fontSize:12,color:C.g600}}>{c.city||'—'}</td>
+                        <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,background:tc.bg,color:tc.c,textTransform:'capitalize'}}>{c.tag||'other'}</span></td>
+                        <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,textAlign:'center'}}>{c.total_quotes||0}</td>
+                        <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,color:C.navy,fontWeight:500}}>{fmt(c.total_billed||0)}</td>
+                        <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,color:balance>0?C.amber:C.green,fontWeight:600}}>{balance>0?fmt(balance):'Paid &#10003;'}</td>
+                        <td style={{padding:'12px 14px'}}>
+                          <div style={{display:'flex',gap:6}}>
+                            <a href={'/quotes/create?client='+c.id} style={{padding:'4px 10px',borderRadius:6,border:'1px solid '+C.blue+'40',background:C.blue+'10',color:C.blue,fontSize:11,fontWeight:600,textDecoration:'none'}}>Quote</a>
+                            {c.phone&&<a href={'https://wa.me/'+c.phone.replace(/\D/g,'')} target="_blank" rel="noopener noreferrer" style={{padding:'4px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:11,fontWeight:600,textDecoration:'none'}}>WA</a>}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              <div style={{padding:'10px 14px',background:C.g50,borderTop:'1px solid '+C.g100,fontSize:11,color:C.g400}}>{filteredClients.length} clients</div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Clients View */}
-      {view === 'Clients' && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
-          {clients.length === 0 ? (
-            <div style={{ gridColumn:'1/-1', padding:60, textAlign:'center' }}>
-              <div style={{ fontSize:40, marginBottom:12 }}>👥</div>
-              <p style={{ color:'#8A9BB5' }}>No clients yet. Create a quote to add a client.</p>
+      {/* Leads table */}
+      {tab==='leads'&&(
+        <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}>
+          {loading?<div style={{padding:40,textAlign:'center',color:C.g400}}>Loading...</div>:filteredLeads.length===0?(
+            <div style={{padding:60,textAlign:'center'}}>
+              <div style={{fontSize:40,marginBottom:12}}>&#127919;</div>
+              <p style={{color:C.g400,marginBottom:16}}>{search?'No leads match "'+search+'"':'No leads yet. Add leads from enquiries.'}</p>
             </div>
-          ) : clients.map(c => (
-            <div key={c.id} style={{ ...S.card }} onClick={() => setPanel(c)}>
-              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
-                <div style={{ width:40, height:40, borderRadius:'50%', background:'linear-gradient(135deg,#1A6FE8,#0EA5A0)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700, color:'#fff', flexShrink:0 }}>{c.name[0]}</div>
-                <div>
-                  <div style={{ fontWeight:700, fontSize:14 }}>{c.name}</div>
-                  <div style={{ fontSize:12, color:'#8A9BB5' }}>{c.phone}</div>
-                </div>
-                <span style={{ ...S.pill('#1A6FE8','rgba(26,111,232,0.08)'), marginLeft:'auto' }}>{c.tag}</span>
-              </div>
-              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                <div style={{ fontSize:11, background:'#F0F4F8', borderRadius:6, padding:'3px 8px' }}>Quotes: <b>{c.total_quotes || 0}</b></div>
-                <div style={{ fontSize:11, background:'#F0F4F8', borderRadius:6, padding:'3px 8px' }}>Billed: <b>₹{(c.total_billed||0).toLocaleString('en-IN')}</b></div>
-              </div>
+          ):(
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse'}}>
+                <thead><tr style={{background:C.g50}}>{['Name','Phone','Source','Status','Est. Value','Follow-up',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.g400,borderBottom:'1px solid '+C.g100}}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {filteredLeads.map((l,i)=>{
+                    const ls = LEAD_STATUS[l.status]||LEAD_STATUS.open
+                    return(
+                      <tr key={l.id} style={{borderBottom:'1px solid '+C.g50}}>
+                        <td style={{padding:'12px 14px',fontWeight:600,fontSize:13,color:C.navy}}>{l.name||'Unnamed'}</td>
+                        <td style={{padding:'12px 14px',fontSize:12,color:C.g600}}>{l.phone||'—'}</td>
+                        <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:600,padding:'2px 8px',borderRadius:6,background:C.g100,color:C.g600,textTransform:'capitalize'}}>{l.source||'other'}</span></td>
+                        <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:100,background:ls.bg,color:ls.c,textTransform:'capitalize'}}>{(l.status||'open').replace('_',' ')}</span></td>
+                        <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,color:C.navy}}>{l.value_estimate?fmt(l.value_estimate):'—'}</td>
+                        <td style={{padding:'12px 14px',fontSize:12,color:l.follow_up_date&&new Date(l.follow_up_date)<new Date()?C.red:C.g400}}>
+                          {l.follow_up_date?new Date(l.follow_up_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—'}
+                        </td>
+                        <td style={{padding:'12px 14px'}}>
+                          <select value={l.status||'open'} onChange={async e=>{await supabase.from('leads').update({status:e.target.value}).eq('id',l.id);setLeads(prev=>prev.map(x=>x.id===l.id?{...x,status:e.target.value}:x))}} onClick={e=>e.stopPropagation()} style={{padding:'4px 8px',borderRadius:6,border:'1px solid '+C.g200,fontSize:11,color:C.navy,cursor:'pointer',outline:'none'}}>
+                            {Object.keys(LEAD_STATUS).map(s=><option key={s} value={s}>{s.replace('_',' ')}</option>)}
+                          </select>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Follow-ups View */}
-      {view === 'Follow-ups' && (
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          {leads.filter(l => l.follow_up_date).length === 0 ? (
-            <div style={{ padding:60, textAlign:'center' }}>
-              <div style={{ fontSize:40, marginBottom:12 }}>🔔</div>
-              <p style={{ color:'#8A9BB5' }}>No follow-ups scheduled.</p>
-            </div>
-          ) : leads.filter(l => l.follow_up_date).sort((a,b) => new Date(a.follow_up_date) - new Date(b.follow_up_date)).map(l => {
-            const isOverdue = new Date(l.follow_up_date) < new Date()
-            const d = new Date(l.follow_up_date)
-            return (
-              <div key={l.id} style={{ background:'#fff', border:'1px solid #E8EDF3', borderLeft:`3px solid ${isOverdue ? '#EF4444' : '#22C55E'}`, borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:16 }}>
-                <div style={{ textAlign:'center', minWidth:44 }}>
-                  <div style={{ ...S.mono, fontSize:20 }}>{d.getDate()}</div>
-                  <div style={{ fontSize:10, color:'#8A9BB5', textTransform:'uppercase' }}>{d.toLocaleString('en-IN',{month:'short'})}</div>
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:600, fontSize:14 }}>{l.name}</div>
-                  <div style={{ fontSize:12, color:'#4A5568', marginTop:2 }}>{l.follow_up_note || 'Follow up'}</div>
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6 }}>
-                  <span style={{ ...S.pill(isOverdue ? '#EF4444' : '#22C55E', isOverdue ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.1)') }}>{isOverdue ? 'Overdue' : 'Upcoming'}</span>
-                  <button onClick={() => updateLeadStatus(l.id,'won')} style={{ padding:'4px 10px', borderRadius:6, border:'1px solid #E8EDF3', background:'#fff', fontSize:11, cursor:'pointer' }}>Mark Done</button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Activities View */}
-      {view === 'Activities' && (
-        <div style={{ background:'#fff', border:'1px solid #E8EDF3', borderRadius:12, padding:24, textAlign:'center' }}>
-          <div style={{ fontSize:40, marginBottom:12 }}>📅</div>
-          <h3 style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:700, marginBottom:8 }}>Activity Timeline</h3>
-          <p style={{ color:'#8A9BB5' }}>Activities are logged automatically when you send quotes, receive payments, or log calls manually.</p>
-        </div>
-      )}
-
-      {/* Lead Detail Panel */}
-      {panel && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:80, display:'flex', justifyContent:'flex-end' }} onClick={() => setPanel(null)}>
-          <div style={{ width:380, background:'#fff', height:'100%', display:'flex', flexDirection:'column', boxShadow:'0 8px 32px rgba(11,31,58,0.2)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding:'20px 24px', borderBottom:'1px solid #E8EDF3', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <div><div style={{ fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700 }}>{panel.name}</div><div style={{ fontSize:12, color:'#8A9BB5', marginTop:2 }}>{panel.phone}</div></div>
-              <button onClick={() => setPanel(null)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:20, color:'#8A9BB5' }}>✕</button>
-            </div>
-            <div style={{ flex:1, overflowY:'auto', padding:'20px 24px' }}>
-              <div style={{ marginBottom:20 }}>
-                <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', color:'#8A9BB5', marginBottom:10 }}>Pipeline Stage</div>
-                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                  {STAGES.map(s => (
-                    <button key={s.key} onClick={() => updateLeadStatus(panel.id, s.key)} style={{ padding:'4px 10px', borderRadius:100, border:`1px solid ${panel.status === s.key ? s.color : '#E8EDF3'}`, background: panel.status === s.key ? s.bg : '#fff', color: panel.status === s.key ? s.color : '#8A9BB5', fontSize:11, fontWeight:600, cursor:'pointer' }}>{s.label}</button>
-                  ))}
-                </div>
-              </div>
-              {panel.value_estimate && (
-                <div style={{ background:'#F0F4F8', borderRadius:10, padding:14, marginBottom:16 }}>
-                  <div style={{ fontSize:10, color:'#8A9BB5', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:4 }}>Estimated Value</div>
-                  <div style={{ ...S.mono, fontSize:22 }}>₹{panel.value_estimate?.toLocaleString('en-IN')}</div>
-                </div>
-              )}
-              {panel.notes && <div style={{ fontSize:13, color:'#4A5568', lineHeight:1.6, marginBottom:16 }}>{panel.notes}</div>}
-            </div>
-            <div style={{ padding:'16px 24px', borderTop:'1px solid #E8EDF3', display:'flex', gap:8 }}>
-              <button style={{ flex:1, padding:'9px 0', borderRadius:8, border:'none', background:'#0EA5A0', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>💬 WhatsApp</button>
-              <button style={{ flex:1, padding:'9px 0', borderRadius:8, border:'none', background:'#1A6FE8', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>📋 New Quote</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {addClient&&<AddClientModal companyId={profile?.company_id} onClose={()=>setAddClient(false)} onDone={()=>{setAddClient(false);load()}}/>}
     </div>
   )
 }
