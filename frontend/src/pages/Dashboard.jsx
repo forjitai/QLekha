@@ -1,91 +1,271 @@
 import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 
+const C = {
+  navy:'#0B1F3A', blue:'#1A6FE8', blueLt:'#3B8EFF', teal:'#0EA5A0',
+  amber:'#FFB400', green:'#22C55E', red:'#EF4444', bg:'#F0F4F8',
+  white:'#fff', g100:'#E8EDF3', g400:'#8A9BB5', g600:'#4A5568', g50:'#F8FAFC',
+}
+const fmt = (n) => n >= 100000 ? '\u20b9'+(n/100000).toFixed(1)+'L' : n >= 1000 ? '\u20b9'+(n/1000).toFixed(0)+'K' : '\u20b9'+(n||0)
+
+function KPI({ icon, value, label, sub, color, trend }) {
+  return (
+    <div style={{background:C.white,borderRadius:16,padding:20,border:'1px solid '+C.g100,borderTop:'3px solid '+color,position:'relative',overflow:'hidden'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
+        <div style={{width:38,height:38,borderRadius:10,background:color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{icon}</div>
+        {trend !== undefined && (
+          <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:100,background:trend>=0?C.green+'20':C.red+'20',color:trend>=0?C.green:C.red}}>
+            {trend>=0?'+':''}{trend}%
+          </span>
+        )}
+      </div>
+      <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:26,fontWeight:500,color:C.navy,marginBottom:2}}>{value}</div>
+      <div style={{fontSize:12,color:C.g400}}>{label}</div>
+      {sub && <div style={{fontSize:11,color:C.g600,marginTop:3}}>{sub}</div>}
+    </div>
+  )
+}
+
+function QuickAction({ icon, label, href, color }) {
+  return (
+    <a href={href} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8,padding:'16px 12px',borderRadius:12,border:'1px solid '+C.g100,background:C.white,textDecoration:'none',transition:'all 0.15s',cursor:'pointer'}}>
+      <div style={{width:40,height:40,borderRadius:10,background:color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
+      <span style={{fontSize:12,fontWeight:600,color:C.navy}}>{label}</span>
+    </a>
+  )
+}
+
 export default function Dashboard() {
-  const { t } = useTranslation()
-  const [stats, setStats] = useState({ quotes: 0, revenue: 0, pending: 0, winRate: 0 })
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(null)
+  const [stats, setStats] = useState({
+    totalQuotes:0, draftQuotes:0, sentQuotes:0, approvedQuotes:0,
+    totalInvoices:0, pendingInvoices:0, overdueInvoices:0,
+    totalRevenue:0, collected:0, outstanding:0,
+    thisMonthRevenue:0, lastMonthRevenue:0,
+    totalClients:0, activeLeads:0,
+    recentQuotes:[], overdueList:[],
+  })
 
-  useEffect(() => {
-    // Load real stats from Supabase
-    async function loadStats() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data: userData } = await supabase.from('users').select('company_id').eq('id', user.id).single()
-      if (!userData) return
-      const companyId = userData.company_id
+  useEffect(() => { load() }, [])
 
-      const [quotesRes, invoicesRes] = await Promise.all([
-        supabase.from('quotes').select('id, status, grand_total').eq('company_id', companyId),
-        supabase.from('invoices').select('balance_due').eq('company_id', companyId).in('status', ['pending','partial','overdue'])
-      ])
+  async function load() {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return setLoading(false)
+    const { data: ud } = await supabase.from('users').select('*,companies(*)').eq('id', user.id).single()
+    if (!ud) return setLoading(false)
+    setProfile(ud)
+    const cid = ud.company_id
+    const now = new Date()
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString()
+    const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-      const quotes = quotesRes.data || []
-      const approved = quotes.filter(q => q.status === 'approved').length
-      const sent = quotes.filter(q => ['sent','approved','rejected'].includes(q.status)).length
-      const pendingBills = (invoicesRes.data || []).reduce((s, i) => s + (i.balance_due || 0), 0)
+    const [qr, ir, pr, cr, lr] = await Promise.all([
+      supabase.from('quotes').select('id,status,grand_total,created_at,client_name,quote_number').eq('company_id',cid).order('created_at',{ascending:false}).limit(50),
+      supabase.from('invoices').select('id,status,grand_total,balance_due,created_at,client_name,invoice_number,due_date').eq('company_id',cid),
+      supabase.from('payments').select('amount,payment_date').eq('company_id',cid),
+      supabase.from('clients').select('id,name,total_billed,is_active').eq('company_id',cid),
+      supabase.from('leads').select('id,status').eq('company_id',cid),
+    ])
 
-      setStats({
-        quotes: quotes.length,
-        revenue: quotes.filter(q => q.status === 'approved').reduce((s, q) => s + (q.grand_total || 0), 0),
-        pending: pendingBills,
-        winRate: sent > 0 ? Math.round((approved / sent) * 100) : 0
-      })
-    }
-    loadStats()
-  }, [])
+    const quotes   = qr.data || []
+    const invoices = ir.data || []
+    const payments = pr.data || []
+    const clients  = cr.data || []
+    const leads    = lr.data || []
 
-  const kpis = [
-    { label: 'Revenue This Month', value: '₹' + (stats.revenue/100000).toFixed(1) + 'L', trend: '↑ 18%', color: '#1A6FE8', icon: '💰' },
-    { label: 'Quotes Sent', value: stats.quotes, trend: '↑ 5', color: '#0EA5A0', icon: '📋' },
-    { label: 'Pending Payments', value: '₹' + Math.round(stats.pending/1000) + 'K', trend: '↑ ₹12K', color: '#FFB400', icon: '⏳' },
-    { label: 'Win Rate', value: stats.winRate + '%', trend: '↑ 4%', color: '#22C55E', icon: '🎯' },
-  ]
+    const totalRevenue    = invoices.filter(i=>i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
+    const collected       = payments.reduce((s,p)=>s+(p.amount||0),0)
+    const outstanding     = invoices.filter(i=>['pending','partial','overdue'].includes(i.status)).reduce((s,i)=>s+(i.balance_due||0),0)
+    const thisMonthRevenue= invoices.filter(i=>i.created_at>=thisMonthStart&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
+    const lastMonthRevenue= invoices.filter(i=>i.created_at>=lastMonthStart&&i.created_at<lastMonthEnd&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
+    const revTrend        = lastMonthRevenue>0?Math.round(((thisMonthRevenue-lastMonthRevenue)/lastMonthRevenue)*100):0
+    const overdueList     = invoices.filter(i=>i.status==='overdue'||(i.due_date&&new Date(i.due_date)<now&&(i.balance_due||0)>0)).slice(0,5)
+
+    setStats({
+      totalQuotes: quotes.length,
+      draftQuotes: quotes.filter(q=>q.status==='draft').length,
+      sentQuotes:  quotes.filter(q=>q.status==='sent').length,
+      approvedQuotes: quotes.filter(q=>q.status==='approved').length,
+      totalInvoices: invoices.length,
+      pendingInvoices: invoices.filter(i=>i.status==='pending').length,
+      overdueInvoices: invoices.filter(i=>i.status==='overdue').length,
+      totalRevenue, collected, outstanding,
+      thisMonthRevenue, lastMonthRevenue, revTrend,
+      totalClients: clients.length,
+      activeLeads: leads.filter(l=>l.status==='open').length,
+      recentQuotes: quotes.slice(0,6),
+      overdueList,
+    })
+    setLoading(false)
+  }
+
+  const co = profile?.companies || {}
+  const trialDays = co.plan_expires_at ? Math.max(0,Math.ceil((new Date(co.plan_expires_at)-new Date())/(864e5))) : 0
+
+  if (loading) {
+    return (
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',flexDirection:'column',gap:12}}>
+        <div style={{fontSize:32}}>&#128202;</div>
+        <div style={{fontSize:13,color:C.g400}}>Loading your dashboard...</div>
+      </div>
+    )
+  }
+
+  const SC = {
+    draft:    {bg:'#E8EDF3',color:'#8A9BB5'},
+    sent:     {bg:'rgba(26,111,232,0.1)',color:'#1A6FE8'},
+    approved: {bg:'rgba(14,165,160,0.1)',color:'#0EA5A0'},
+    rejected: {bg:'rgba(239,68,68,0.08)',color:'#EF4444'},
+    expired:  {bg:'rgba(255,180,0,0.1)',color:'#FFB400'},
+  }
+
+  const noData = stats.totalQuotes === 0 && stats.totalInvoices === 0
 
   return (
-    <div>
-      <div style={{ marginBottom:24 }}>
-        <h1 style={{ fontFamily:'Syne', fontSize:22, fontWeight:700, marginBottom:4 }}>Good morning 👋</h1>
-        <p style={{ fontSize:13, color:'#8A9BB5' }}>Here's what's happening in your business today.</p>
+    <div style={{fontFamily:'Inter,sans-serif'}}>
+      {/* Welcome header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24,flexWrap:'wrap',gap:12}}>
+        <div>
+          <h2 style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:700,color:C.navy,marginBottom:4}}>
+            Good day&#44; {co.owner_name||'there'} &#128075;
+          </h2>
+          <p style={{fontSize:13,color:C.g400}}>{co.name||'Your business'} &#183; {new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</p>
+        </div>
+        <a href="/quotes/create" style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'Syne,sans-serif',boxShadow:'0 4px 14px rgba(26,111,232,0.3)'}}>
+          &#43; New Quote
+        </a>
       </div>
 
-      {/* KPI Grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16, marginBottom:24 }}>
-        {kpis.map((kpi, i) => (
-          <div key={i} style={{ background:'#fff', borderRadius:16, padding:20, border:'1px solid #E8EDF3', position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:kpi.color, borderRadius:'16px 16px 0 0' }} />
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-              <div style={{ width:36, height:36, borderRadius:9, background:kpi.color+'20', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{kpi.icon}</div>
-              <span style={{ fontSize:11, fontWeight:600, background:'#f0fdf4', color:'#22C55E', padding:'3px 8px', borderRadius:100 }}>{kpi.trend}</span>
-            </div>
-            <div style={{ fontFamily:'JetBrains Mono', fontSize:26, fontWeight:500, marginBottom:4 }}>{kpi.value}</div>
-            <div style={{ fontSize:12, color:'#8A9BB5' }}>{kpi.label}</div>
+      {/* Trial banner */}
+      {co.plan === 'trial' && trialDays <= 7 && (
+        <div style={{background:'linear-gradient(135deg,#92400E,#b45309)',borderRadius:14,padding:'14px 20px',display:'flex',alignItems:'center',gap:14,marginBottom:20,flexWrap:'wrap'}}>
+          <span style={{fontSize:24}}>&#9203;</span>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'#fff'}}>{trialDays} days left on your trial</div>
+            <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>Upgrade to keep creating unlimited quotes and invoices.</div>
           </div>
-        ))}
+          <a href="/settings" style={{padding:'8px 16px',borderRadius:8,background:'rgba(255,255,255,0.2)',border:'1px solid rgba(255,255,255,0.3)',color:'#fff',textDecoration:'none',fontSize:12,fontWeight:600}}>View Plans &#8594;</a>
+        </div>
+      )}
+
+      {/* Empty onboarding state */}
+      {noData && (
+        <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:'48px 32px',marginBottom:24,textAlign:'center'}}>
+          <div style={{fontSize:52,marginBottom:16}}>&#128640;</div>
+          <h3 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.navy,marginBottom:8}}>Ready to create your first quote?</h3>
+          <p style={{color:C.g400,fontSize:14,maxWidth:400,margin:'0 auto 24px',lineHeight:1.6}}>QLekha makes window quoting fast and professional. Add your first client and create a quote in under 5 minutes.</p>
+          <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
+            <a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'Syne,sans-serif'}}>&#128203; Create Quote</a>
+            <a href="/crm" style={{background:'transparent',border:'1px solid '+C.g200,color:C.navy,textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:600}}>&#128100; Add Client</a>
+            <a href="/settings" style={{background:'transparent',border:'1px solid '+C.g200,color:C.navy,textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:600}}>&#9881;&#65039; Setup Business</a>
+          </div>
+        </div>
+      )}
+
+      {/* KPI cards */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:20}}>
+        <KPI icon="&#128176;" value={fmt(stats.thisMonthRevenue)} label="Revenue this month" sub={'Total: '+fmt(stats.totalRevenue)} color={C.blue} trend={stats.revTrend}/>
+        <KPI icon="&#9989;" value={fmt(stats.collected)} label="Total collected" sub={'Outstanding: '+fmt(stats.outstanding)} color={C.green}/>
+        <KPI icon="&#128203;" value={String(stats.totalQuotes)} label="Total quotes" sub={stats.sentQuotes+' sent, '+stats.approvedQuotes+' approved'} color={C.teal}/>
+        <KPI icon="&#128100;" value={String(stats.totalClients)} label="Clients" sub={stats.activeLeads+' open leads'} color={C.amber}/>
       </div>
 
-      {/* Quick Actions */}
-      <div style={{ background:'#fff', borderRadius:16, padding:20, border:'1px solid #E8EDF3' }}>
-        <h3 style={{ fontFamily:'Syne', fontSize:14, fontWeight:700, marginBottom:16 }}>Quick Actions</h3>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10 }}>
-          {[
-            { icon:'📋', label:'New Quote', sub:'Start a fresh quotation', path:'/quotes/create' },
-            { icon:'🧾', label:'Create Invoice', sub:'Bill an approved quote', path:'/billing' },
-            { icon:'👤', label:'Add Client', sub:'Save a new contact', path:'/crm' },
-            { icon:'📦', label:'Update Prices', sub:'Glass & profile rates', path:'/stock' },
-          ].map((a, i) => (
-            <a key={i} href={a.path} style={{
-              display:'flex', alignItems:'center', gap:12,
-              padding:'12px 14px', borderRadius:10, background:'#F0F4F8',
-              border:'1px solid #E8EDF3', textDecoration:'none', transition:'all 0.15s',
-            }}>
-              <span style={{ fontSize:20 }}>{a.icon}</span>
-              <div>
-                <div style={{ fontSize:13, fontWeight:500, color:'#0B1F3A' }}>{a.label}</div>
-                <div style={{ fontSize:11, color:'#8A9BB5' }}>{a.sub}</div>
+      {/* Overdue alert */}
+      {stats.overdueList.length > 0 && (
+        <div style={{background:'linear-gradient(135deg,#7f1d1d,#991b1b)',borderRadius:14,padding:'14px 20px',display:'flex',alignItems:'center',gap:14,marginBottom:20,flexWrap:'wrap'}}>
+          <span style={{fontSize:22}}>&#9888;&#65039;</span>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:'#fff'}}>{stats.overdueList.length} overdue invoice{stats.overdueList.length>1?'s':''} &#8212; {fmt(stats.overdueList.reduce((s,i)=>s+(i.balance_due||0),0))} outstanding</div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:2}}>{stats.overdueList.map(i=>i.client_name).join(', ')}</div>
+          </div>
+          <a href="/billing" style={{padding:'7px 14px',borderRadius:8,background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.25)',color:'#fff',textDecoration:'none',fontSize:12,fontWeight:600}}>View Invoices &#8594;</a>
+        </div>
+      )}
+
+      <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:20,marginBottom:20}}>
+        {/* Recent quotes */}
+        <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}>
+          <div style={{padding:'16px 20px',borderBottom:'1px solid '+C.g100,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700}}>Recent Quotes</div>
+            <a href="/quotes" style={{fontSize:12,color:C.blue,textDecoration:'none',fontWeight:600}}>View all &#8594;</a>
+          </div>
+          {stats.recentQuotes.length === 0 ? (
+            <div style={{padding:'40px 20px',textAlign:'center',color:C.g400,fontSize:13}}>No quotes yet. <a href="/quotes/create" style={{color:C.blue,textDecoration:'none',fontWeight:600}}>Create one &#8594;</a></div>
+          ) : (
+            stats.recentQuotes.map((q, i) => {
+              const sc = SC[q.status] || SC.draft
+              return (
+                <div key={q.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 20px',borderBottom:i<stats.recentQuotes.length-1?'1px solid '+C.g50:'none'}}>
+                  <div style={{width:36,height:36,borderRadius:9,background:C.blue+'15',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'JetBrains Mono,monospace',fontSize:10,fontWeight:600,color:C.blue,flexShrink:0}}>
+                    {(q.quote_number||'').slice(-3)}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:C.navy,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{q.client_name}</div>
+                    <div style={{fontSize:11,color:C.g400}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+                  </div>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:100,...sc}}>{q.status}</span>
+                  <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:12,fontWeight:500,color:C.navy,flexShrink:0}}>{fmt(q.grand_total||0)}</div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Quick stats + actions */}
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          {/* Quote funnel mini */}
+          <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:20}}>
+            <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,marginBottom:14}}>Quote Pipeline</div>
+            {[
+              {label:'Draft', count:stats.draftQuotes, color:'#8A9BB5'},
+              {label:'Sent', count:stats.sentQuotes, color:C.blue},
+              {label:'Approved', count:stats.approvedQuotes, color:C.teal},
+            ].map(s => (
+              <div key={s.label} style={{marginBottom:10}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span style={{fontSize:12,color:C.g600}}>{s.label}</span>
+                  <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:12,fontWeight:600,color:s.color}}>{s.count}</span>
+                </div>
+                <div style={{height:6,background:C.g100,borderRadius:100,overflow:'hidden'}}>
+                  <div style={{height:'100%',width:(stats.totalQuotes>0?(s.count/stats.totalQuotes)*100:0)+'%',background:s.color,borderRadius:100}}/>
+                </div>
               </div>
-            </a>
-          ))}
+            ))}
+          </div>
+
+          {/* Invoice status */}
+          <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:20}}>
+            <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,marginBottom:14}}>Invoice Status</div>
+            {[
+              {label:'Total', count:stats.totalInvoices, color:C.blue},
+              {label:'Pending', count:stats.pendingInvoices, color:C.amber},
+              {label:'Overdue', count:stats.overdueInvoices, color:C.red},
+            ].map(s => (
+              <div key={s.label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0',borderBottom:'1px solid '+C.g50}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:s.color}}/>
+                  <span style={{fontSize:12,color:C.g600}}>{s.label}</span>
+                </div>
+                <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:600,color:s.color}}>{s.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:20,marginBottom:20}}>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,marginBottom:14}}>Quick Actions</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(100px,1fr))',gap:10}}>
+          <QuickAction icon="&#128203;" label="New Quote" href="/quotes/create" color={C.blue}/>
+          <QuickAction icon="&#129518;" label="Add Client" href="/crm" color={C.teal}/>
+          <QuickAction icon="&#128222;" label="Stock" href="/stock" color={C.amber}/>
+          <QuickAction icon="&#128196;" label="PDF Demo" href="/pdf-demo" color={C.red}/>
+          <QuickAction icon="&#128202;" label="Analytics" href="/analytics" color={'#6366F1'}/>
+          <QuickAction icon="&#9881;&#65039;" label="Settings" href="/settings" color={C.g400}/>
         </div>
       </div>
     </div>
