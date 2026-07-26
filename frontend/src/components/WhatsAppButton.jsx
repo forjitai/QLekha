@@ -50,7 +50,7 @@ export function WhatsAppSendBtn({ phone, type, data, onSent, label = 'WhatsApp' 
     if (result.ok) {
       setSent(true); show('Sent ✓'); onSent?.()
     } else if (result.error?.includes('not configured')) {
-      const text = encodeURIComponent(data?.fallbackText || `Hi, here is your ${type}.`)
+      const text = encodeURIComponent(data?.fallbackText || ('Hi, here is your ' + type + '.'))
       window.open('https://wa.me/' + normalisePhone(phone) + '?text=' + text, '_blank')
       show('Opened WhatsApp ✓')
       setSent(true); onSent?.()
