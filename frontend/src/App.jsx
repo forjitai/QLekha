@@ -151,10 +151,10 @@ function Auth() {
     clr(); if (!email || pw.length < 8) return setErr('Email required, min 8 char password.')
     if (pw !== cpw) return setErr('Passwords do not match.')
     setLoading(true)
-    const { error:e } = await supabase.auth.signUp({ email, password:pw, options:{ emailRedirectTo: window.location.origin+'/auth' } })
+    const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
-    if (e) setErr(e.message.includes('already') ? 'Email already registered.' : e.message)
-    else { setMode('otp'); setTimer(60); setOk('Check email for a 6-digit code.') }
+    if (e) { setErr(e.message.includes('already') ? 'Email already registered. Please sign in.' : e.message) }
+    else { setMode('onboard'); setStep(1) }
   }
 
   async function verify() {
