@@ -119,6 +119,7 @@ function Auth() {
   const [show, setShow] = useState(false)
   const [step, setStep] = useState(1)
   const [ob, setOb] = useState({ company_name:'', owner_name:'', phone:'', city:'', language:'en' })
+  const [signupUser, setSignupUser] = useState(null)
 
   useEffect(() => {
     if (timer > 0) { const t = setTimeout(() => setTimer(v => v-1), 1000); return () => clearTimeout(t) }
