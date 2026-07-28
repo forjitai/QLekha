@@ -152,10 +152,14 @@ function Auth() {
     clr(); if (!email || pw.length < 8) return setErr('Email required, min 8 char password.')
     if (pw !== cpw) return setErr('Passwords do not match.')
     setLoading(true)
-    const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
+    const { error:signupErr } = await supabase.auth.signUp({ email, password:pw })
+    if (signupErr && !signupErr.message.includes('already')) {
+      setLoading(false); return setErr(signupErr.message)
+    }
+    const { data:loginData, error:loginErr } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
-    if (e) { setErr(e.message.includes('already') ? 'Email already registered. Please sign in.' : e.message) }
-    else { signupUserRef.current=data.user; setMode('onboard'); setStep(1) }
+    if (loginErr) return setErr('Account created — please sign in.')
+    setMode('onboard'); setStep(1)
   }
 
   async function verify() {
@@ -171,12 +175,8 @@ function Auth() {
   async function finish() {
     clr(); setLoading(true)
     try {
-      let user = signupUserRef.current
-      if (!user) {
-        const { data:{ user: u } } = await supabase.auth.getUser()
-        user = u
-      }
-      if (!user) throw new Error('Session not found. Please sign in.')
+      const { data:{ user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Session expired. Please sign in again.')
       const { data:co, error:cE } = await supabase.from('companies').insert({
         name:ob.company_name, owner_name:ob.owner_name, phone:ob.phone, city:ob.city,
         plan:'trial', trial_started_at:new Date().toISOString(),
