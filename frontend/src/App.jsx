@@ -154,7 +154,7 @@ function Auth() {
     const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
     if (e) { setErr(e.message.includes('already') ? 'Email already registered. Please sign in.' : e.message) }
-    else { setMode('onboard'); setStep(1) }
+    else { setSignupUser(data.user); setMode('onboard'); setStep(1) }
   }
 
   async function verify() {
@@ -164,14 +164,18 @@ function Auth() {
     const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'email' })
     setLoading(false)
     if (e) setErr('Incorrect or expired code.')
-    else { setMode('onboard'); setStep(1) }
+    else { setSignupUser(data.user); setMode('onboard'); setStep(1) }
   }
 
   async function finish() {
     clr(); setLoading(true)
     try {
-      const { data:{ user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      let user = signupUser
+      if (!user) {
+        const { data:{ user: u } } = await supabase.auth.getUser()
+        user = u
+      }
+      if (!user) throw new Error('Session not found. Please sign in.')
       const { data:co, error:cE } = await supabase.from('companies').insert({
         name:ob.company_name, owner_name:ob.owner_name, phone:ob.phone, city:ob.city,
         plan:'trial', trial_started_at:new Date().toISOString(),
