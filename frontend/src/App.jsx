@@ -175,7 +175,8 @@ function Auth() {
   async function finish() {
     clr(); setLoading(true)
     try {
-      const { data:{ user } } = await supabase.auth.getUser()
+      const { data:{ session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) throw new Error('Session expired. Please sign in again.')
       const { data:co, error:cE } = await supabase.from('companies').insert({
         name:ob.company_name, owner_name:ob.owner_name, phone:ob.phone, city:ob.city,
