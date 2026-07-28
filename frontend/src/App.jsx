@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { WhatsAppSendBtn, WhatsAppModal } from './components/WhatsAppButton'
 import { QuotePDFBar, PDFDemoPage } from './components/PDFButton'
@@ -155,7 +155,7 @@ function Auth() {
     const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
     if (e) { setErr(e.message.includes('already') ? 'Email already registered. Please sign in.' : e.message) }
-    else { setSignupUser(data.user); setMode('onboard'); setStep(1) }
+    else { signupUserRef.current=data.user; setMode('onboard'); setStep(1) }
   }
 
   async function verify() {
@@ -165,13 +165,13 @@ function Auth() {
     const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'email' })
     setLoading(false)
     if (e) setErr('Incorrect or expired code.')
-    else { setSignupUser(data.user); setMode('onboard'); setStep(1) }
+    else { signupUserRef.current=data.user; setMode('onboard'); setStep(1) }
   }
 
   async function finish() {
     clr(); setLoading(true)
     try {
-      let user = signupUser
+      let user = signupUserRef.current
       if (!user) {
         const { data:{ user: u } } = await supabase.auth.getUser()
         user = u
