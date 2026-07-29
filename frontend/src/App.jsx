@@ -151,14 +151,11 @@ function Auth() {
     clr(); if (!email || pw.length < 8) return setErr('Email required, min 8 char password.')
     if (pw !== cpw) return setErr('Passwords do not match.')
     setLoading(true)
-    const { error:signupErr } = await supabase.auth.signUp({ email, password:pw })
-    if (signupErr && !signupErr.message.includes('already')) {
-      setLoading(false); return setErr(signupErr.message)
-    }
-    const { data:loginData, error:loginErr } = await supabase.auth.signInWithPassword({ email, password:pw })
+    const { error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
-    if (loginErr) return setErr('Account created — please sign in.')
-    setMode('onboard'); setStep(1)
+    if (e && !e.message.toLowerCase().includes('already')) return setErr(e.message)
+    setMode('otp'); setTimer(60); setOtp('')
+    setOk('Check your email for a 6-digit code.')
   }
 
   async function verify() {
@@ -166,9 +163,11 @@ function Auth() {
     if (token.length !== 6) return setErr('Enter the full 6-digit code.')
     setLoading(true)
     const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'email' })
+    if (e) { setLoading(false); return setErr('Incorrect or expired code. Try again.') }
+    const { error:loginErr } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
-    if (e) setErr('Incorrect or expired code.')
-    else { signupUserRef.current=data.user; setMode('onboard'); setStep(1) }
+    if (loginErr) return setErr('Verified! Now sign in with your password.')
+    setMode('onboard'); setStep(1)
   }
 
   async function finish() {
