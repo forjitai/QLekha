@@ -144,8 +144,7 @@ function Auth() {
     setLoading(true)
     const { error:e } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
-    if (e) setErr(e.message.includes('Invalid') ? 'Wrong email or password.' : e.message)
-    else window.location.href = '/dashboard'
+    if(e){if(e.message.toLowerCase().includes('not confirmed'))setErr('Email not confirmed. Please go to Supabase → Auth → Providers → Email → turn OFF Confirm email, then try again.');else if(e.message.includes('Invalid'))setErr('Wrong email or password.');else setErr(e.message)}else window.location.href='/dashboard'
   }
 
   async function signup() {
