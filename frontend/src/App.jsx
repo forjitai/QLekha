@@ -368,36 +368,82 @@ function Settings() {
   )
 }
 
-function Quotes() {
-  const [quotes,setQuotes]=useState([]);const [filter,setFilter]=useState('all');const [loading,setLoading]=useState(true);const [profile,setProfile]=useState(null);const [waModal,setWaModal]=useState(null)
+function Quotes(){
+  const[quotes,setQuotes]=useState([]);const[filter,setFilter]=useState('all');const[loading,setLoading]=useState(true);const[profile,setProfile]=useState(null);const[waModal,setWaModal]=useState(null);const[converting,setConverting]=useState(null);const[toast,setToast]=useState(null)
+  const showToast=(msg,type='success')=>{setToast({msg,type});setTimeout(()=>setToast(null),3000)}
   const SC={draft:{bg:'#E8EDF3',color:'#8A9BB5'},sent:{bg:'rgba(26,111,232,0.1)',color:'#1A6FE8'},approved:{bg:'rgba(14,165,160,0.1)',color:'#0EA5A0'},rejected:{bg:'rgba(239,68,68,0.08)',color:'#EF4444'}}
   useEffect(()=>{async function load(){setLoading(true);const{data:{user}}=await supabase.auth.getUser();if(!user)return setLoading(false);const{data:ud}=await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single();if(!ud)return setLoading(false);setProfile(ud);const{data}=await supabase.from('quotes').select('*,clients(name,phone)').eq('company_id',ud.company_id).order('created_at',{ascending:false});setQuotes(data||[]);setLoading(false)}load()},[])
+  async function updateStatus(id,status){await supabase.from('quotes').update({status}).eq('id',id);setQuotes(p=>p.map(q=>q.id===id?{...q,status}:q));showToast('Status updated to '+status)}
+  async function convertToInvoice(quote){
+    setConverting(quote.id)
+    try{
+      const invNum='INV-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000)
+      const dueDate=new Date(Date.now()+30*864e5).toISOString()
+      const{data:inv,error}=await supabase.from('invoices').insert({
+        company_id:quote.company_id,quote_id:quote.id,
+        client_id:quote.client_id,client_name:quote.client_name,
+        invoice_number:invNum,type:'tax_invoice',status:'pending',
+        subtotal:quote.subtotal,gst_amount:quote.gst_amount,
+        discount_amount:quote.discount_amount||0,
+        installation_amount:quote.installation_amount||0,
+        grand_total:quote.grand_total,
+        paid_amount:0,balance_due:quote.grand_total,
+        due_date:dueDate
+      }).select().single()
+      if(error)throw error
+      await supabase.from('quotes').update({status:'approved'}).eq('id',quote.id)
+      setQuotes(p=>p.map(q=>q.id===quote.id?{...q,status:'approved'}:q))
+      showToast('Invoice '+invNum+' created!')
+    }catch(e){showToast('Failed: '+e.message,'error')}
+    setConverting(null)
+  }
   const filtered=filter==='all'?quotes:quotes.filter(q=>q.status===filter)
-  return(
-    <Layout>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}><h2 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700}}>Quotes</h2><a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600}}>+ New Quote</a></div>
-      <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>{['all','draft','sent','approved','rejected'].map(s=>(<button key={s} onClick={()=>setFilter(s)} style={{padding:'6px 14px',borderRadius:100,fontSize:12,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.navy:C.g100,background:filter===s?C.navy:C.white,color:filter===s?'#fff':'#4A5568'}}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>))}</div>
-      <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}>
-        {loading?<div style={{padding:40,textAlign:'center',color:C.g400}}>Loading...</div>:filtered.length===0?<div style={{padding:60,textAlign:'center'}}><div style={{fontSize:40,marginBottom:12}}>&#128203;</div><p style={{color:C.g400,marginBottom:20}}>No quotes yet</p><a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600}}>Create Quote</a></div>:
-        <div style={{overflowX:'auto'}}><table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead><tr style={{background:C.g50}}>{['Quote #','Client','Amount','Status','Date','Actions'].map(h=>(<th key={h} style={{padding:'11px 16px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.g400,borderBottom:'1px solid '+C.g100}}>{h}</th>))}</tr></thead>
-          <tbody>{filtered.map(q=>{const sc=SC[q.status]||SC.draft;const phone=q.clients?.phone||q.client_phone;return(<tr key={q.id} style={{borderBottom:'1px solid '+C.g50}}>
-            <td style={{padding:'13px 16px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.g400}}>#{q.quote_number}</td>
-            <td style={{padding:'13px 16px'}}><div style={{fontWeight:600,fontSize:13,color:C.navy}}>{q.client_name}</div><div style={{fontSize:11,color:C.g400}}>{phone}</div></td>
-            <td style={{padding:'13px 16px',fontFamily:'JetBrains Mono,monospace',fontWeight:500,color:C.navy}}>\u20b9{(q.grand_total||0).toLocaleString('en-IN')}</td>
-            <td style={{padding:'13px 16px'}}><span style={{...sc,padding:'3px 9px',borderRadius:100,fontSize:10,fontWeight:700}}>{q.status}</span></td>
-            <td style={{padding:'13px 16px',fontSize:12,color:C.g400}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
-            <td style={{padding:'13px 16px'}}><div style={{display:'flex',gap:6,alignItems:'center'}}>
-              <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone}} items={[]} bank={profile?.companies||{}}/>
-              <WhatsAppSendBtn phone={phone} type="quote" label="WA" data={{clientName:q.client_name,quoteNumber:q.quote_number,total:q.grand_total,items:[],companyName:profile?.companies?.name||'QLekha',companyId:profile?.company_id,fallbackText:'Hi '+q.client_name+', your quote #'+q.quote_number+' for \u20b9'+(q.grand_total||0).toLocaleString('en-IN')+' is ready. Reply YES to approve.'}}/>
-              <button onClick={()=>setWaModal(q)} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:11,cursor:'pointer',color:'#25D366'}}>...</button>
-            </div></td>
-          </tr>)})}</tbody>
-        </table></div>}
+  return(<Layout>
+    {toast&&<div style={{position:'fixed',bottom:24,right:24,background:toast.type==='error'?C.red:C.teal,color:'#fff',padding:'12px 20px',borderRadius:10,fontSize:13,fontWeight:500,zIndex:300,boxShadow:'0 8px 24px rgba(0,0,0,0.15)'}}>{toast.msg}</div>}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
+      <h2 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700}}>Quotes</h2>
+      <a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600}}>+ New Quote</a>
+    </div>
+    <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
+      {['all','draft','sent','approved','rejected'].map(s=>(<button key={s} onClick={()=>setFilter(s)} style={{padding:'6px 14px',borderRadius:100,fontSize:12,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.navy:C.g100,background:filter===s?C.navy:C.white,color:filter===s?'#fff':'#4A5568'}}>{s.charAt(0).toUpperCase()+s.slice(1)} {s==='all'?'('+quotes.length+')':'('+quotes.filter(q=>q.status===s).length+')'}</button>))}
+    </div>
+    <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}>
+      {loading?<div style={{padding:40,textAlign:'center',color:C.g400}}>Loading...</div>
+      :filtered.length===0?<div style={{padding:60,textAlign:'center'}}>
+        <div style={{fontSize:40,marginBottom:12}}>\ud83d\udccb</div>
+        <p style={{color:C.g400,marginBottom:16}}>{filter==='all'?'No quotes yet':'No '+filter+' quotes'}</p>
+        <a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600}}>Create Quote</a>
       </div>
-      {waModal&&<WhatsAppModal isOpen={!!waModal} onClose={()=>setWaModal(null)} contact={{name:waModal.client_name,phone:waModal.clients?.phone||waModal.client_phone}} companyId={profile?.company_id} companyName={profile?.companies?.name||'QLekha'}/>}
-    </Layout>
-  )
+      :<div style={{overflowX:'auto'}}>
+        <table style={{width:'100%',borderCollapse:'collapse'}}>
+          <thead><tr style={{background:'#F8FAFC'}}>{['Quote #','Client','Amount','Status','Date','Actions'].map(h=>(<th key={h} style={{padding:'11px 16px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.g400,borderBottom:'1px solid '+C.g100}}>{h}</th>))}</tr></thead>
+          <tbody>{filtered.map(q=>{
+            const sc=SC[q.status]||SC.draft
+            const phone=q.clients?.phone||q.client_phone
+            return(<tr key={q.id} style={{borderBottom:'1px solid #F8FAFC'}}>
+              <td style={{padding:'13px 16px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.g400}}>#{q.quote_number}</td>
+              <td style={{padding:'13px 16px'}}><div style={{fontWeight:600,fontSize:13,color:C.navy}}>{q.client_name}</div><div style={{fontSize:11,color:C.g400}}>{phone||''}</div></td>
+              <td style={{padding:'13px 16px',fontFamily:'JetBrains Mono,monospace',fontWeight:500,color:C.navy}}>\u20b9{(q.grand_total||0).toLocaleString('en-IN')}</td>
+              <td style={{padding:'13px 16px'}}>
+                <select value={q.status} onChange={e=>updateStatus(q.id,e.target.value)} style={{padding:'3px 8px',borderRadius:100,fontSize:10,fontWeight:700,border:'none',cursor:'pointer',background:sc.bg,color:sc.color,outline:'none',appearance:'none',paddingRight:16}}>
+                  {['draft','sent','approved','rejected'].map(s=><option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
+                </select>
+              </td>
+              <td style={{padding:'13px 16px',fontSize:12,color:C.g400}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
+              <td style={{padding:'13px 16px'}}>
+                <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'wrap'}}>
+                  <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={[]} bank={profile?.companies||{}}/>
+                  <button onClick={()=>setWaModal(q)} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:11,cursor:'pointer',color:'#25D366'}}>WA</button>
+                  {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:11,cursor:'pointer',color:C.teal,whiteSpace:'nowrap'}}>{converting===q.id?'...':`→ Invoice`}</button>}
+                </div>
+              </td>
+            </tr>)})}
+          </tbody>
+        </table>
+      </div>}
+    </div>
+    {waModal&&<WhatsAppModal isOpen={!!waModal} onClose={()=>setWaModal(null)} contact={{name:waModal.client_name,phone:waModal.clients?.phone||waModal.client_phone}} companyId={profile?.company_id} companyName={profile?.companies?.name||'QLekha'}/>}
+  </Layout>)
 }
 
 function Analytics(){const[loading,setLoading]=useState(true);const[quotes,setQuotes]=useState([]);const[invoices,setInvoices]=useState([]);const[payments,setPayments]=useState([]);const[clients,setClients]=useState([]);const now=new Date();useEffect(()=>{async function load(){setLoading(true);const{data:{user}}=await supabase.auth.getUser();if(!user)return setLoading(false);const{data:ud}=await supabase.from('users').select('company_id').eq('id',user.id).single();if(!ud)return setLoading(false);const cid=ud.company_id;const[qr,ir,pr,cr]=await Promise.all([supabase.from('quotes').select('id,status,grand_total,created_at').eq('company_id',cid),supabase.from('invoices').select('id,status,grand_total,paid_amount,balance_due,created_at').eq('company_id',cid),supabase.from('payments').select('amount,payment_date').eq('company_id',cid),supabase.from('clients').select('id,name,total_quotes,total_billed,total_paid,tag').eq('company_id',cid)]);setQuotes(qr.data||[]);setInvoices(ir.data||[]);setPayments(pr.data||[]);setClients(cr.data||[]);setLoading(false)}load()},[]);const totalCollected=payments.reduce((s,p)=>s+(p.amount||0),0);const totalOut=invoices.filter(i=>['pending','partial','overdue'].includes(i.status)).reduce((s,i)=>s+(i.balance_due||0),0);const sent=quotes.filter(q=>['sent','approved','rejected'].includes(q.status));const won=quotes.filter(q=>q.status==='approved');const winRate=sent.length>0?Math.round((won.length/sent.length)*100):0;const thisM=(d)=>{const dt=new Date(d);return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear()};const thisMonthRev=invoices.filter(i=>thisM(i.created_at)&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0);const monthly=Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-(5-i),1);const value=invoices.filter(inv=>{const id=new Date(inv.created_at);return id.getMonth()===d.getMonth()&&id.getFullYear()===d.getFullYear()&&inv.status!=='cancelled'}).reduce((s,inv)=>s+(inv.grand_total||0),0);return{label:MONTHS[d.getMonth()],value}});const topClients=[...clients].sort((a,b)=>(b.total_billed||0)-(a.total_billed||0)).slice(0,5);const maxBar=Math.max(...monthly.map(m=>m.value),1);const funnel=[{l:'Created',n:quotes.length,c:'#6366F1'},{l:'Sent',n:quotes.filter(q=>['sent','approved','rejected'].includes(q.status)).length,c:C.blue},{l:'Won',n:won.length,c:C.teal},{l:'Invoiced',n:invoices.length,c:C.amber},{l:'Paid',n:invoices.filter(i=>i.status==='paid').length,c:C.green}];const kpis=[{i:'&#128176;',v:fmt(thisMonthRev),l:'Revenue this month',c:C.blue},{i:'&#9989;',v:fmt(totalCollected),l:'Total collected',c:C.green},{i:'&#127919;',v:winRate+'%',l:'Win rate',c:C.teal},{i:'&#8987;',v:fmt(totalOut),l:'Outstanding',c:C.amber}];if(loading)return<Layout><div style={{padding:60,textAlign:'center',color:C.g400}}>&#128200; Loading...</div></Layout>;return<Layout><div style={{marginBottom:20}}><h2 style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:700,color:C.navy,marginBottom:4}}>Analytics</h2><p style={{fontSize:13,color:C.g400}}>Business performance at a glance.</p></div>{quotes.length===0&&invoices.length===0&&<div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:'60px 20px',textAlign:'center',marginBottom:20}}><div style={{fontSize:48,marginBottom:16}}>&#128202;</div><p style={{color:C.g400,fontSize:14,marginBottom:20}}>Create quotes and invoices to see analytics.</p><a href="/quotes/create" style={{background:C.blue,color:C.white,textDecoration:'none',padding:'10px 20px',borderRadius:10,fontSize:13,fontWeight:700}}>&#128203; Create First Quote</a></div>}<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:16,marginBottom:20}}>{kpis.map(k=>(<div key={k.l} style={{background:C.white,borderRadius:16,padding:20,border:'1px solid '+C.g100,borderTop:'3px solid '+k.c}}><div style={{width:36,height:36,borderRadius:9,background:k.c+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,marginBottom:10}} dangerouslySetInnerHTML={{__html:k.i}}/><div style={{fontFamily:'JetBrains Mono,monospace',fontSize:24,fontWeight:500,color:C.navy,marginBottom:2}}>{k.v}</div><div style={{fontSize:12,color:C.g400}}>{k.l}</div></div>))}</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:20}}><div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}><div style={{padding:'14px 18px',borderBottom:'1px solid '+C.g100}}><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700}}>Monthly Revenue</div></div><div style={{padding:18}}>{monthly.every(m=>m.value===0)?<div style={{padding:30,textAlign:'center',color:C.g400,fontSize:13}}>No invoices yet</div>:<svg width="100%" height={160} viewBox={'0 0 '+monthly.length*80+' 180'} style={{minWidth:300}}>{monthly.map((m,i)=>{const bH=(m.value/maxBar)*140;const x=i*80+10;return(<g key={i}><rect x={x} y={150-bH} width={50} height={bH} rx={5} fill={C.blue} opacity={0.85}/>{m.value>0&&<text x={x+25} y={150-bH-5} textAnchor="middle" fontSize={9} fontFamily="JetBrains Mono,monospace" fill={C.blue}>{m.value>=1000?(m.value/1000).toFixed(0)+'K':m.value}</text>}<text x={x+25} y={168} textAnchor="middle" fontSize={11} fontFamily="Inter,sans-serif" fill={C.g400}>{m.label}</text></g>)})}</svg>}</div></div><div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}><div style={{padding:'14px 18px',borderBottom:'1px solid '+C.g100}}><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700}}>Conversion Funnel</div></div><div style={{padding:18}}>{quotes.length===0?<div style={{padding:30,textAlign:'center',color:C.g400,fontSize:13}}>No quotes yet</div>:funnel.map(f=>(<div key={f.l} style={{marginBottom:12}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}><span style={{fontSize:13,fontWeight:600,color:C.navy}}>{f.l}</span><span style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:600,color:f.c}}>{f.n}</span></div><div style={{height:8,background:C.g100,borderRadius:100,overflow:'hidden'}}><div style={{height:'100%',width:(quotes.length>0?(f.n/quotes.length)*100:0)+'%',background:f.c,borderRadius:100}}/></div></div>))}</div></div></div><div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}><div style={{padding:'14px 18px',borderBottom:'1px solid '+C.g100,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700}}>Top Clients</div><a href="/crm" style={{fontSize:12,color:C.blue,textDecoration:'none',fontWeight:600}}>View all</a></div><div style={{padding:18}}>{topClients.length===0?<div style={{padding:30,textAlign:'center',color:C.g400,fontSize:13}}>No clients yet</div>:topClients.map((c,i)=>(<div key={c.id} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 0',borderBottom:i<topClients.length-1?'1px solid '+C.g100:'none'}}><div style={{width:32,height:32,borderRadius:'50%',background:C.blue,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0}}>{c.name[0]}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.navy}}>{c.name}</div><div style={{fontSize:11,color:C.g400}}>{c.tag} \u00b7 {c.total_quotes||0} quotes</div></div><div style={{textAlign:'right'}}><div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:500,color:C.navy}}>{fmt(c.total_billed||0)}</div><div style={{fontSize:11,color:(c.total_billed-c.total_paid)>0?C.amber:C.green}}>{(c.total_billed-c.total_paid)>0?fmt(c.total_billed-c.total_paid)+' due':'Paid \u2713'}</div></div></div>))}</div></div></Layout>}
