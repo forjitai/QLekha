@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Billing from './pages/Billing'
 import Stock from './pages/Stock'
 import CRM from './pages/CRM'
+import QuoteWizard from './pages/QuoteWizard'
 
 const C = {
   navy:'#0B1F3A', blue:'#1A6FE8', blueLt:'#3B8EFF', teal:'#0EA5A0',
