@@ -434,7 +434,7 @@ function Quotes(){
                 <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'wrap'}}>
                   <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={[]} bank={profile?.companies||{}}/>
                   <button onClick={()=>setWaModal(q)} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:11,cursor:'pointer',color:'#25D366'}}>WA</button>
-                  {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:11,cursor:'pointer',color:C.teal,whiteSpace:'nowrap'}}>{converting===q.id?'...':`→ Invoice`}</button>}
+                  {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:11,cursor:'pointer',color:C.teal,whiteSpace:'nowrap'}}>{converting===q.id?'...':'→ Invoice'}</button>}
                 </div>
               </td>
             </tr>)})}
