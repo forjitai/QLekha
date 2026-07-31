@@ -145,7 +145,7 @@ function Auth() {
     setLoading(true)
     const { error:e } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
-    if(e){if(e.message.toLowerCase().includes('not confirmed')){setLoading(true);const{error:otpErr}=await supabase.auth.signInWithOtp({email,options:{shouldCreateUser:false}});setLoading(false);if(!otpErr){setMode('otp');setTimer(60);setOtp('');setOk('Confirmation code sent to '+email+'. Enter it below.')}else setErr('Email not confirmed. Please check your inbox.')};else if(e.message.includes('Invalid'))setErr('Wrong email or password.');else setErr(e.message)}else window.location.href='/dashboard'
+    if(e){if(e.message.toLowerCase().includes('not confirmed')){setErr('Email not confirmed. Please go to: supabase.com/dashboard/project/yqtgfgvcohuwaaugxlrz/auth/providers → Email → turn OFF Confirm email → Save. Then sign in.')};else if(e.message.includes('Invalid'))setErr('Wrong email or password.');else setErr(e.message)}else window.location.href='/dashboard'
   }
 
   async function signup() {
