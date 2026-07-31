@@ -416,7 +416,7 @@ export default function App() {
       <Route path="/auth" element={session ? <Navigate to="/dashboard" replace/> : <Auth/>}/>
       <Route path="/dashboard" element={session ? <Layout><Dashboard/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/quotes" element={session ? <Quotes/> : <Navigate to="/auth" replace/>}/>
-      <Route path="/quotes/create" element={session ? <Layout><div style={{padding:40,textAlign:'center'}}><div style={{fontSize:48,marginBottom:16}}>&#128203;</div><h2 style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:700,color:C.navy}}>Create Quote</h2><p style={{color:C.g400,marginTop:8}}>Full 4-step wizard coming soon.</p></div></Layout> : <Navigate to="/auth" replace/>}/>
+      <Route path="/quotes/create" element={session?<Layout><QuoteWizard/></Layout>:<Navigate to="/auth" replace/>}/>}/>
       <Route path="/billing" element={session ? <Layout><Billing/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/stock" element={session ? <Layout><Stock/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/crm" element={session ? <Layout><CRM/></Layout> : <Navigate to="/auth" replace/>}/>
