@@ -189,6 +189,24 @@ function Auth() {
         email:user.email, phone:ob.phone, role:'owner', language:ob.language,
       })
       if (uE) throw uE
+      // Seed starter stock for new company
+      await Promise.all([
+        supabase.from('profile_companies').insert([
+          {company_id:co.id,brand:'Jindal',series:'46S',material_type:'aluminium',color:'Silver',weight_per_meter:1.8,price_per_kg:280},
+          {company_id:co.id,brand:'Jindal',series:'60S',material_type:'aluminium',color:'Anodized',weight_per_meter:2.1,price_per_kg:280},
+          {company_id:co.id,brand:'Fenesta',series:'Standard',material_type:'upvc',color:'White',weight_per_meter:1.5,price_per_kg:320},
+        ]),
+        supabase.from('glass_types').insert([
+          {company_id:co.id,name:'Clear Float 4mm',thickness_mm:4,price_per_sqft:45,brand:'Saint-Gobain'},
+          {company_id:co.id,name:'Toughened 8mm',thickness_mm:8,price_per_sqft:120,brand:'Saint-Gobain'},
+          {company_id:co.id,name:'Reflective Bronze 6mm',thickness_mm:6,price_per_sqft:95,brand:'AIS'},
+        ]),
+        supabase.from('accessories').insert([
+          {company_id:co.id,name:'Aluminium Handle',category:'handle',unit:'piece',price:180,brand:'Hardwyn'},
+          {company_id:co.id,name:'Mosquito Mesh',category:'mosquito_mesh',unit:'sqft',price:35},
+          {company_id:co.id,name:'Stainless Hinge',category:'hinge',unit:'piece',price:120},
+        ])
+      ])
       setLoading(false)
       window.location.href = '/dashboard'
     } catch(e) { setLoading(false); setErr('Setup failed: '+e.message) }
