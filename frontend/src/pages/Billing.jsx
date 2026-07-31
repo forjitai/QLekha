@@ -96,6 +96,7 @@ export default function Billing() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
   const [payModal, setPayModal] = useState(null)
+  const [pdfLoading, setPdfLoading] = useState(null)
 
   useEffect(() => { load() }, [])
 
@@ -113,6 +114,22 @@ export default function Billing() {
     setInvoices(ir.data||[])
     setPayments(pr.data||[])
     setLoading(false)
+  }
+
+  async function downloadInvoicePDF(inv) {
+    setPdfLoading(inv.id)
+    try {
+      const co = profile?.companies || {}
+      const doc = await generateInvoicePDF(
+        {...inv, type: inv.type || 'tax_invoice'},
+        co,
+        { name: inv.client_name, city: inv.client_address },
+        [],
+        { bank_name: co.bank_name, account_number: co.account_number, ifsc_code: co.ifsc_code, upi_id: co.upi_id }
+      )
+      downloadPDF(doc, 'Invoice-' + inv.invoice_number + '.pdf')
+    } catch(e) { alert('PDF error: ' + e.message) }
+    setPdfLoading(null)
   }
 
   const filteredInvoices = filter==='all' ? invoices : invoices.filter(i=>i.status===filter)
