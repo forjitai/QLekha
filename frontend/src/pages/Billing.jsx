@@ -214,7 +214,8 @@ export default function Billing() {
                             {inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—'}
                           </td>
                           <td style={{padding:'12px 14px'}}>
-                            {inv.status!=='paid'&&inv.status!=='cancelled'&&(
+                            <button onClick={()=>downloadInvoicePDF(inv)} disabled={pdfLoading===inv.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(26,111,232,0.3)',background:'rgba(26,111,232,0.06)',color:C.blue,fontSize:11,fontWeight:600,cursor:'pointer'}}>{pdfLoading===inv.id?'...':'PDF'}</button>
+                   {inv.status!=='paid'&&inv.status!=='cancelled'&&(
                               <button onClick={()=>setPayModal(inv)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid '+C.green+'40',background:C.green+'10',color:C.green,fontSize:11,fontWeight:600,cursor:'pointer'}}>
                                 Record Payment
                               </button>
