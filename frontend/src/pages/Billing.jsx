@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { generateInvoicePDF, downloadPDF, getPDFDataUri } from '../lib/pdfgen'
 
 const C = {
   navy:'#0B1F3A', blue:'#1A6FE8', teal:'#0EA5A0', amber:'#FFB400',
