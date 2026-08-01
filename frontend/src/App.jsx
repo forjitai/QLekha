@@ -154,7 +154,10 @@ function Auth() {
     setLoading(true)
     const { error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
-    if (e && !e.message.toLowerCase().includes('already')) return setErr(e.message)
+    if (e) {
+      const msg = e.message || e.msg || JSON.stringify(e)
+      if (!msg.toLowerCase().includes('already')) return setErr(msg)
+    }
     setMode('otp'); setTimer(60); setOtp('')
     setOk('Check your email for a 6-digit code.')
   }
