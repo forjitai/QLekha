@@ -167,7 +167,7 @@ function Auth() {
     if (token.length !== 6) return setErr('Enter the full 6-digit code.')
     setLoading(true)
     const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'email' })
-    if (e) { setLoading(false); return setErr('Incorrect or expired code. Try again.') }
+    if (e) { setLoading(false); return setErr('Incorrect or expired code. Try again. Error: '+(e.message||JSON.stringify(e))) }
     const { error:loginErr } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
     if (loginErr) return setErr('Verified! Now sign in with your password.')
@@ -212,7 +212,7 @@ function Auth() {
       ])
       setLoading(false)
       window.location.href = '/dashboard'
-    } catch(e) { setLoading(false); setErr('Setup failed: '+e.message) }
+    } catch(e) { setLoading(false); setErr('Setup failed: '+(e.message||e.msg||JSON.stringify(e))) }
   }
 
   const pageS = {minHeight:'100vh',background:C.navy,display:'flex',position:'relative',overflow:'hidden',fontFamily:'Inter,sans-serif'}
