@@ -10,13 +10,13 @@ const C = {
 const fmt = (n) => n>=100000?'\u20b9'+(n/100000).toFixed(1)+'L':n>=1000?'\u20b9'+(n/1000).toFixed(0)+'K':'\u20b9'+(n||0)
 
 function AddClientModal({ companyId, onClose, onDone }) {
-  const [form, setForm] = useState({name:'',phone:'',email:'',address:'',city:'',tag:'residential',gst_number:''})
+  const [form, setForm] = useState({name:'',phone:'',email:'',address:'',city:'',tag:'individual',gst_number:''})
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
   const upd = (k,v) => setForm(p=>({...p,[k]:v}))
   const inp = {width:'100%',padding:'9px 12px',borderRadius:8,border:'1.5px solid '+C.g200,fontSize:13,fontFamily:'Inter,sans-serif',color:C.navy,outline:'none',boxSizing:'border-box',marginBottom:12}
   const lb = {fontSize:11,fontWeight:700,color:C.g400,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}
-  const TAGS = ['residential','commercial','builder','dealer','govt','other']
+  const TAGS = ['individual','contractor','builder','dealer','architect','other']
 
   async function submit() {
     if (!form.name.trim()) return setErr('Client name is required.')
@@ -92,11 +92,11 @@ export default function CRM() {
   const filteredLeads = leads.filter(l=>[l.name,l.phone,l.source].some(v=>v?.toLowerCase().includes(search.toLowerCase())))
 
   const TAG_COLORS = {
-    residential: {bg:C.blue+'15',c:C.blue},
-    commercial:  {bg:C.teal+'15',c:C.teal},
+    individual: {bg:C.blue+'15',c:C.blue},
+    contractor:  {bg:C.teal+'15',c:C.teal},
     builder:     {bg:C.purp+'15',c:C.purp},
     dealer:      {bg:C.amber+'15',c:C.amber},
-    govt:        {bg:C.green+'15',c:C.green},
+    architect:        {bg:C.green+'15',c:C.green},
     other:       {bg:C.g100,c:C.g400},
   }
   const LEAD_STATUS = {
