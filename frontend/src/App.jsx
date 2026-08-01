@@ -432,11 +432,11 @@ function Quotes(){
         company_id:quote.company_id,quote_id:quote.id,
         client_id:quote.client_id,client_name:quote.client_name,
         invoice_number:invNum,type:'tax_invoice',status:'pending',
-        subtotal:quote.subtotal,gst_amount:quote.gst_amount,
+        base_amount:quote.sub_total,cgst_amount:Math.round((quote.cgst_amount||0)+(quote.sgst_amount||0))/2,sgst_amount:Math.round((quote.cgst_amount||0)+(quote.sgst_amount||0))/2,
         discount_amount:quote.discount_amount||0,
-        installation_amount:quote.installation_amount||0,
+        installation:quote.installation||0,
         grand_total:quote.grand_total,
-        paid_amount:0,balance_due:quote.grand_total,
+        paid_amount:0,balance_due:quote.grand_total,paid_amount:0,
         due_date:dueDate
       }).select().single()
       if(error)throw error
