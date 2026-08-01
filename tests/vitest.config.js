@@ -10,13 +10,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['../frontend/src/**/*.{js,jsx}'],
-      exclude: ['../frontend/src/main.jsx'],
-    },
-  },
-  resolve: {
-    alias: {
-      '../src': '../frontend/src',
     },
   },
 })
