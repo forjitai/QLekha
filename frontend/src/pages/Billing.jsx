@@ -104,7 +104,7 @@ export default function Billing() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return setLoading(false)
-    const { data: ud } = await supabase.from('users').select('company_id,companies(name)').eq('id',user.id).single()
+    const { data: ud } = await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single()
     if (!ud) return setLoading(false)
     setProfile(ud)
     const [ir, pr] = await Promise.all([
