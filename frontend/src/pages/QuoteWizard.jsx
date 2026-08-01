@@ -31,7 +31,7 @@ function Step1({profile,onNext,initial}){
   const[search,setSearch]=useState('')
   const[selected,setSelected]=useState(initial||null)
   const[adding,setAdding]=useState(false)
-  const[form,setForm]=useState({name:'',phone:'',email:'',city:'',tag:'residential'})
+  const[form,setForm]=useState({name:'',phone:'',email:'',city:'',tag:'individual'})
   const[loading,setLoading]=useState(false)
   const[err,setErr]=useState('')
   const upd=(k,v)=>setForm(p=>({...p,[k]:v}))
@@ -52,7 +52,7 @@ function Step1({profile,onNext,initial}){
     setClients(p=>[data,...p])
     setSelected(data)
     setAdding(false)
-    setForm({name:'',phone:'',email:'',city:'',tag:'residential'})
+    setForm({name:'',phone:'',email:'',city:'',tag:'individual'})
     setErr('')
   }
 
@@ -89,7 +89,7 @@ function Step1({profile,onNext,initial}){
               </div>
               <label style={LB}>Tag</label>
               <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
-                {['residential','commercial','builder','dealer','govt','other'].map(t=>(
+                {['individual','builder','contractor','dealer','architect','corporate'].map(t=>(
                   <button key={t} onClick={()=>upd('tag',t)} style={{padding:'4px 10px',borderRadius:6,border:'1.5px solid '+(form.tag===t?C.blue:C.g200),background:form.tag===t?C.blue+'10':C.white,color:form.tag===t?C.blue:C.g600,fontSize:11,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
                 ))}
               </div>
@@ -317,26 +317,26 @@ function Step4({client,items,profile,onBack,onDone}){
         client_address:client.city,
         quote_number:qNum,
         status:'draft',
-        subtotal:Math.round(subtotal),
-        gst_amount:Math.round(gstAmt),
+        sub_total:Math.round(subtotal),
+        cgst_amount:Math.round(gstAmt/2),sgst_amount:Math.round(gstAmt/2),
         discount_amount:parseFloat(discount)||0,
-        installation_amount:parseFloat(installation)||0,
+        installation:parseFloat(installation)||0,
         grand_total:grandTotal,
-        valid_until:validUntil,
+        expires_at:validUntil,
         notes
       }).select().single()
       if(qE)throw qE
       const qItems=items.map(it=>({
         quote_id:q.id,company_id:profile.company_id,
-        title:it.title,description:it.description||'',
+        title:it.title,hardware_name:it.description||'',
         width_mm:it.width_mm,height_mm:it.height_mm,
         quantity:it.quantity,unit_price:it.unit_price,
-        gst_rate:it.gst_rate,total_amount:it.total_amount
+        total_amount:it.total_amount,item_value:it.unit_price
       }))
       await supabase.from('quote_items').insert(qItems)
       setSaved(q)
       const doc=await generateQuotePDF(
-        {...q,valid_until:validUntil},
+        {...q,expires_at:validUntil},
         co,client,items,
         {bank_name:co.bank_name,account_number:co.account_number,ifsc_code:co.ifsc_code,upi_id:co.upi_id}
       )
