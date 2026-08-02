@@ -1,0 +1,43 @@
+#!/bin/sh
+# QLekha Pre-Commit Hook
+# Runs unit and UI tests before every commit
+# Blocks commit if any test fails
+
+echo ""
+echo "🧪 QLekha Pre-Commit Tests"
+echo "================================"
+
+# Check if tests/node_modules exists, install if not
+if [ ! -d "tests/node_modules" ]; then
+  echo "📦 Installing test dependencies..."
+  cd tests && npm install --silent && cd ..
+fi
+
+echo "▶ Running unit tests..."
+cd tests && npm run test:unit -- --reporter=verbose
+UNIT_EXIT=$?
+cd ..
+
+if [ $UNIT_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ Unit tests FAILED — commit blocked"
+  echo "   Fix the failing tests before committing."
+  exit 1
+fi
+
+echo ""
+echo "▶ Running UI tests..."
+cd tests && npm run test:ui -- --reporter=verbose
+UI_EXIT=$?
+cd ..
+
+if [ $UI_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ UI tests FAILED — commit blocked"
+  echo "   Fix the failing tests before committing."
+  exit 1
+fi
+
+echo ""
+echo "✅ All tests passed — proceeding with commit"
+echo ""
