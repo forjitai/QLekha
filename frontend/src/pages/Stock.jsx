@@ -38,7 +38,7 @@ function AddRowModal({ tableName, companyId, fields, onClose, onDone }) {
     setLoading(true)
     const { error } = await supabase.from(tableName).insert({ ...form, company_id: companyId })
     setLoading(false)
-    if (error) return setErr(error.message)
+    if (error) return setErr(error?.message||error?.msg||JSON.stringify(error))
     onDone()
   }
 
@@ -180,7 +180,8 @@ export default function Stock() {
                       <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,color:C.teal,fontWeight:600}}>
                         {p.weight_per_meter&&p.price_per_kg?'Rs.'+((p.weight_per_meter*p.price_per_kg).toFixed(2)):'—'}
                       </td>
-                      <td style={{padding:'12px 14px'}}><button onClick={async()=>{if(confirm('Delete this profile?')){await supabase.from('profile_companies').delete().eq('id',p.id);setProfiles(prev=>prev.filter(x=>x.id!==p.id))}}} style={{padding:'4px 8px',borderRadius:6,border:'1px solid rgba(239,68,68,0.2)',background:'rgba(239,68,68,0.06)',color:C.red,fontSize:11,cursor:'pointer'}}>Delete</button></td>
+                      <td style={{padding:'12px 14px'}}><button onClick={async()=>{if(confirm('Delete this profile?')){await supabase.from('profile_companies').delete().eq('id',p.id);setProfiles(prev=>prev.filter(x=>x.id!==p.id))}}} style={{padding:'4px 8px',borderRadius:6,border:'1px solid #EF444440',background:'#EF444408',color:'#EF4444',fontSize:11,cursor:'pointer'}}>Delete</button>
+              <button onClick={async()=>{await supabase.from('profile_companies').update({is_active:!p.is_active}).eq('id',p.id);setProfiles(prev=>prev.map(x=>x.id===p.id?{...x,is_active:!x.is_active}:x))}} style={{padding:'4px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',color:'#0EA5A0',fontSize:11,cursor:'pointer'}}>{p.is_active?'Deactivate':'Activate'}</button style={{padding:'4px 8px',borderRadius:6,border:'1px solid rgba(239,68,68,0.2)',background:'rgba(239,68,68,0.06)',color:C.red,fontSize:11,cursor:'pointer'}}>Delete</button></td>
                     </tr>
                   ))}</tbody>
                 </table>
