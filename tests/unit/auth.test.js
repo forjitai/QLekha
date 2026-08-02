@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../../frontend/src/lib/supabase', () => ({
+vi.mock('../mocks/supabase.js', () => ({
   supabase: {
     auth: {
       signUp: vi.fn(),
