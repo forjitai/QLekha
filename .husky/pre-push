@@ -1,0 +1,45 @@
+#!/bin/sh
+# QLekha Pre-Push Hook
+# Runs ALL tests (unit + UI + integration) before every git push
+# Blocks push if any test fails
+
+echo ""
+echo "🚀 QLekha Pre-Push Full Test Suite"
+echo "================================"
+
+if [ ! -d "tests/node_modules" ]; then
+  echo "📦 Installing test dependencies..."
+  cd tests && npm install --silent && cd ..
+fi
+
+echo "▶ Running unit tests..."
+cd tests && npm run test:unit -- --reporter=verbose
+UNIT_EXIT=$?
+cd ..
+
+echo ""
+echo "▶ Running UI tests..."
+cd tests && npm run test:ui -- --reporter=verbose
+UI_EXIT=$?
+cd ..
+
+echo ""
+echo "▶ Running integration tests..."
+cd tests && npm run test:integration -- --reporter=verbose
+INT_EXIT=$?
+cd ..
+
+FAILED=0
+[ $UNIT_EXIT -ne 0 ] && FAILED=1 && echo "❌ Unit tests FAILED"
+[ $UI_EXIT -ne 0 ]   && FAILED=1 && echo "❌ UI tests FAILED"
+[ $INT_EXIT -ne 0 ]  && echo "⚠️  Integration tests had issues (check DB connection)"
+
+if [ $FAILED -ne 0 ]; then
+  echo ""
+  echo "❌ Tests FAILED — push blocked"
+  exit 1
+fi
+
+echo ""
+echo "✅ All tests passed — push allowed"
+echo ""
