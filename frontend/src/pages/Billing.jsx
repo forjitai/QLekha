@@ -214,7 +214,8 @@ export default function Billing() {
                             {inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—'}
                           </td>
                           <td style={{padding:'12px 14px'}}>
-                            <button onClick={()=>downloadInvoicePDF(inv)} disabled={pdfLoading===inv.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(26,111,232,0.3)',background:'rgba(26,111,232,0.06)',color:C.blue,fontSize:11,fontWeight:600,cursor:'pointer'}}>{pdfLoading===inv.id?'...':'PDF'}</button>
+                            <button onClick={()=>{const ph=(inv.client_phone||'').replace(/\D/g,'');if(ph)window.open('https://wa.me/'+ph+'?text='+encodeURIComponent('Hi '+inv.client_name+', invoice *#'+inv.invoice_number+'* for *\u20b9'+(inv.grand_total||0).toLocaleString('en-IN')+'* ready. -'+((profile?.companies?.name)||'QLekha')),'_blank')}} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:11,cursor:'pointer',marginRight:4}}>WA</button>
+                <button onClick={()=>downloadInvoicePDF(inv)} disabled={pdfLoading===inv.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(26,111,232,0.3)',background:'rgba(26,111,232,0.06)',color:C.blue,fontSize:11,fontWeight:600,cursor:'pointer'}}>{pdfLoading===inv.id?'...':'PDF'}</button>
                    {inv.status!=='paid'&&inv.status!=='cancelled'&&(
                               <button onClick={()=>setPayModal(inv)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid '+C.green+'40',background:C.green+'10',color:C.green,fontSize:11,fontWeight:600,cursor:'pointer'}}>
                                 Record Payment
