@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import '@testing-library/jest-dom'
 
-vi.mock('../../frontend/src/lib/supabase', () => ({
+vi.mock('../mocks/supabase.js', () => ({
   supabase: {
     auth: {
       signUp: vi.fn().mockResolvedValue({ error: null }),
