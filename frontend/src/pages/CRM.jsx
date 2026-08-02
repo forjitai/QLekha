@@ -9,6 +9,44 @@ const C = {
 }
 const fmt = (n) => n>=100000?'\u20b9'+(n/100000).toFixed(1)+'L':n>=1000?'\u20b9'+(n/1000).toFixed(0)+'K':'\u20b9'+(n||0)
 
+function AddLeadModal({ companyId, onClose, onDone }) {
+  const [form, setForm] = useState({name:'',phone:'',source:'walkin',status:'new',value_estimate:''})
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
+  const upd = (k,v) => setForm(p=>({...p,[k]:v}))
+  const C2={navy:'#0B1F3A',blue:'#1A6FE8',teal:'#0EA5A0',g100:'#E8EDF3',g200:'#D1D9E6',white:'#fff',red:'#EF4444'}
+  const IS={width:'100%',padding:'9px 12px',borderRadius:8,border:'1.5px solid '+C2.g100,fontSize:13,outline:'none',color:C2.navy,background:C2.white,boxSizing:'border-box',fontFamily:'Inter,sans-serif',marginBottom:10}
+  async function save() {
+    if (!form.name) return setErr('Name required')
+    setLoading(true)
+    const {data,error} = await supabase.from('leads').insert({
+      ...form, company_id:companyId,
+      value_estimate: form.value_estimate ? parseFloat(form.value_estimate) : null
+    }).select().single()
+    setLoading(false)
+    if (error) return setErr(error?.message||JSON.stringify(error))
+    onDone(data)
+  }
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+      <div style={{background:C2.white,borderRadius:16,width:'100%',maxWidth:420,padding:24}}>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700,color:C2.navy,marginBottom:16}}>New Lead</div>
+        {err&&<div style={{background:'rgba(239,68,68,0.08)',borderRadius:8,padding:'8px 12px',fontSize:12,color:C2.red,marginBottom:10}}>{err}</div>}
+        <input value={form.name} onChange={e=>upd('name',e.target.value)} placeholder="Lead name *" style={IS}/>
+        <input type="tel" value={form.phone} onChange={e=>upd('phone',e.target.value)} placeholder="Phone" style={IS}/>
+        <select value={form.source} onChange={e=>upd('source',e.target.value)} style={{...IS,appearance:'none'}}>
+          {['walkin','referral','justdial','instagram','facebook','website','other'].map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+        <input type="number" value={form.value_estimate} onChange={e=>upd('value_estimate',e.target.value)} placeholder="Estimate value (₹)" style={IS}/>
+        <div style={{display:'flex',gap:10,marginTop:4}}>
+          <button onClick={onClose} style={{flex:1,padding:10,borderRadius:8,border:'1.5px solid '+C2.g100,background:'transparent',color:C2.navy,fontSize:13,cursor:'pointer'}}>Cancel</button>
+          <button onClick={save} disabled={loading} style={{flex:2,padding:10,borderRadius:8,border:'none',background:C2.teal,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>{loading?'Saving...':'Add Lead'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AddClientModal({ companyId, onClose, onDone }) {
   const [form, setForm] = useState({name:'',phone:'',email:'',address:'',city:'',tag:'individual',gst_number:''})
   const [loading, setLoading] = useState(false)
@@ -67,6 +105,7 @@ export default function CRM() {
   const [profile, setProfile] = useState(null)
   const [search, setSearch] = useState('')
   const [addClient, setAddClient] = useState(false)
+  const [addLead, setAddLead] = useState(false)
   const [selClient, setSelClient] = useState(null)
 
   useEffect(()=>{load()},[])
@@ -114,7 +153,7 @@ export default function CRM() {
         <h2 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.navy}}>CRM</h2>
         <div style={{display:'flex',gap:8}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search clients..." style={{padding:'8px 12px',borderRadius:8,border:'1px solid '+C.g200,fontSize:13,outline:'none',width:200,fontFamily:'Inter,sans-serif'}}/>
-          {tab==='clients'&&<button onClick={()=>setAddClient(true)} style={{background:C.blue,color:'#fff',border:'none',padding:'8px 16px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>+ Add Client</button>}
+          {tab==='leads'&&<button onClick={()=>setAddLead(true)} style={{background:'#0EA5A0',color:'#fff',border:'none',padding:'7px 14px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',marginLeft:'auto'}}>+ Add Lead</button>}{tab==='clients'&&<button onClick={()=>setAddClient(true)} style={{background:C.blue,color:'#fff',border:'none',padding:'8px 16px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>+ Add Client</button>}
         </div>
       </div>
 
@@ -236,6 +275,7 @@ export default function CRM() {
         </div>
       )}
 
+      {addLead&&<AddLeadModal companyId={profile?.company_id} onClose={()=>setAddLead(false)} onDone={(l)=>{setLeads(p=>[l,...p]);setAddLead(false)}}/>
       {addClient&&<AddClientModal companyId={profile?.company_id} onClose={()=>setAddClient(false)} onDone={()=>{setAddClient(false);load()}}/>}
     </div>
   )
