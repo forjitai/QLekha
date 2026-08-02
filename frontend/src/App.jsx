@@ -145,7 +145,7 @@ function Auth() {
     setLoading(true)
     const { error:e } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
-    if(e){if(e.message.toLowerCase().includes('not confirmed')){setErr('Email not confirmed. Please go to: supabase.com/dashboard/project/yqtgfgvcohuwaaugxlrz/auth/providers → Email → turn OFF Confirm email → Save. Then sign in.')}else if(e.message.includes('Invalid'))setErr('Wrong email or password.');else setErr(e.message)}else window.location.href='/dashboard'
+    if(e){if(e.message.toLowerCase().includes('not confirmed')){setErr('Email not confirmed. Please go to: supabase.com/dashboard/project/yqtgfgvcohuwaaugxlrz/auth/providers → Email → turn OFF Confirm email → Save. Then sign in.')}else if(e.message.includes('Invalid'))setErr('Wrong email or password.');else setErr(e?.message||e?.msg||JSON.stringify(e))}else window.location.href='/dashboard'
   }
 
   async function signup() {
@@ -299,7 +299,7 @@ function Auth() {
           <div style={{fontSize:13,color:C.g400,marginBottom:20}}>Enter your email to get a reset link.</div>
           <label style={LS}>Email</label>
           <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" style={IS}/>
-          <Btn onClick={async()=>{clr();if(!email)return setErr('Enter your email.');setLoading(true);const{error:e}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/auth?reset=1'});setLoading(false);if(e)setErr(e.message);else setOk('Reset link sent to '+email)}} disabled={loading}>
+          <Btn onClick={async()=>{clr();if(!email)return setErr('Enter your email.');setLoading(true);const{error:e}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/auth?reset=1'});setLoading(false);if(e)setErr(e?.message||e?.msg||JSON.stringify(e));else setOk('Reset link sent to '+email)}} disabled={loading}>
             {loading?'\u23f3 Sending...':'Send reset link'}
           </Btn>
           <div style={{textAlign:'center',marginTop:14}}><Lnk onClick={()=>{setMode('login');clr()}}>Back to sign in</Lnk></div>
