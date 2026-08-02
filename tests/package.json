@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run",
-    "test:unit": "vitest run unit/",
-    "test:integration": "vitest run integration/",
-    "test:ui": "vitest run ui/",
+    "test": "vitest run --reporter=verbose",
+    "test:unit": "vitest run unit/ --reporter=verbose",
+    "test:integration": "vitest run integration/ --reporter=verbose",
+    "test:ui": "vitest run ui/ --reporter=verbose",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:report": "vitest run --reporter=verbose"
+    "pretest": "echo '🧪 Running QLekha tests...'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
