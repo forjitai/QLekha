@@ -1,0 +1,15 @@
+{
+  "name": "qlekha",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "cd tests && npm run test",
+    "test:unit": "cd tests && npm run test:unit",
+    "test:ui": "cd tests && npm run test:ui",
+    "test:all": "cd tests && npm run test:unit -- --reporter=verbose && npm run test:ui -- --reporter=verbose",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0"
+  }
+}
