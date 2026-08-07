@@ -215,10 +215,11 @@ function Auth() {
     } catch(e) { setLoading(false); setErr('Setup failed: '+(e.message||e.msg||JSON.stringify(e))) }
   }
 
-  const pageS = {minHeight:'100vh',background:C.navy,display:'flex',position:'relative',overflow:'hidden',fontFamily:'Inter,sans-serif'}
+  const isMobile=window.innerWidth<768
+  const pageS = {minHeight:'100vh',background:C.navy,display:'flex',flexDirection:isMobile?'column':'row',position:'relative',overflow:'hidden',fontFamily:'Inter,sans-serif'}
   const gridS = {position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(26,111,232,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(26,111,232,0.05) 1px,transparent 1px)',backgroundSize:'40px 40px',pointerEvents:'none'}
-  const leftS = {flex:1,display:'flex',flexDirection:'column',justifyContent:'center',padding:'60px 80px',position:'relative',zIndex:1}
-  const rightS = {width:480,background:C.white,display:'flex',flexDirection:'column',justifyContent:'center',padding:'60px 48px',position:'relative',zIndex:1,minHeight:'100vh',overflowY:'auto'}
+  const leftS = {display:isMobile?'none':'flex',flex:1,flexDirection:'column',justifyContent:'center',padding:'60px 80px',position:'relative',zIndex:1}
+  const rightS = {width:isMobile?'100%':480,minHeight:isMobile?'100vh':'auto',background:C.white,display:'flex',flexDirection:'column',justifyContent:'center',padding:isMobile?'36px 20px':'60px 48px',position:'relative',zIndex:1,overflowY:'auto',boxSizing:'border-box'}
   const errS = {background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:C.red,marginBottom:12}
   const okS  = {background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:8,padding:'10px 14px',fontSize:13,color:C.green,marginBottom:12}
 
@@ -237,6 +238,7 @@ function Auth() {
         </p>
       </div>
       <div style={rightS}>
+        {isMobile&&<div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.navy,marginBottom:24,textAlign:'center'}}>Q<span style={{color:C.blue}}>Lekha</span></div>}
         {err && <div style={errS}>{err}</div>}
         {ok  && <div style={okS}>{ok}</div>}
 
