@@ -3,15 +3,6 @@ import { supabase } from '../lib/supabase'
 import { generateInvoicePDF, downloadPDF, getPDFDataUri } from '../lib/pdfgen'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
-const fmt = (n) => '\u20b9'+(n||0).toLocaleString('en-IN')
-const SC = {
-  draft:   {bg:'#E8EDF3',color:'#8A9BB5'},
-  pending: {bg:'rgba(255,180,0,0.1)',color:'#FFB400'},
-  partial: {bg:'rgba(26,111,232,0.1)',color:'#1B4FD8'},
-  paid:    {bg:'rgba(34,197,94,0.1)',color:'#22C55E'},
-  overdue: {bg:'rgba(239,68,68,0.08)',color:'#EF4444'},
-  cancelled:{bg:'#E8EDF3',color:'#8A9BB5'},
-}
 
 function RecordPaymentModal({ invoice, companyId, onClose, onDone }) {
   const [amount, setAmount] = useState(String(invoice.balance_due || 0))
@@ -172,7 +163,7 @@ export default function Billing() {
         <>
           <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
             {['all','pending','partial','paid','overdue'].map(s=>(
-              <button key={s} onClick={()=>setFilter(s)} style={{padding:'5px 12px',borderRadius:100,fontSize:11,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.ink:C.glass,background:filter===s?C.ink:C.snow,color:filter===s?'#fff':'#4A5568',textTransform:'capitalize'}}>
+              <button key={s} onClick={()=>setFilter(s)} style={{padding:'5px 12px',borderRadius:100,fontSize:11,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.ink:C.glass,background:filter===s?C.ink:C.snow,color:filter===s?'#fff':C.ink,textTransform:'capitalize'}}>
                 {s}
               </button>
             ))}
