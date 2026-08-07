@@ -3,24 +3,6 @@ import { supabase } from '../lib/supabase'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
 
-function InlineEdit({ value, onSave, type='text', prefix='' }) {
-  const [editing, setEditing] = useState(false)
-  const [val, setVal] = useState(String(value||''))
-  if (!editing) return (
-    <span onClick={()=>setEditing(true)} style={{cursor:'pointer',borderBottom:'1px dashed '+C.fog,paddingBottom:1}}>
-      {prefix}{value||'—'}
-    </span>
-  )
-  return (
-    <input autoFocus type={type} value={val}
-      onChange={e=>setVal(e.target.value)}
-      onBlur={()=>{setEditing(false);onSave(type==='number'?parseFloat(val)||0:val)}}
-      onKeyDown={e=>{if(e.key==='Enter'){setEditing(false);onSave(type==='number'?parseFloat(val)||0:val)}if(e.key==='Escape')setEditing(false)}}
-      style={{width:'80px',padding:'3px 6px',borderRadius:5,border:'1.5px solid '+C.steel,fontSize:12,fontFamily:'JetBrains Mono,monospace',outline:'none'}}
-    />
-  )
-}
-
 function AddRowModal({ tableName, companyId, fields, onClose, onDone }) {
   const [form, setForm] = useState({})
   const [loading, setLoading] = useState(false)
