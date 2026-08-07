@@ -102,6 +102,7 @@ export function Layout({ children }) {
         <main style={{flex:1,overflowY:'auto',padding:24,background:C.bg}}>{children}</main>
       </div>
     </div>
+    </div>
   )
 }
 
