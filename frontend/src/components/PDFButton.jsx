@@ -15,7 +15,7 @@ import {
 const C = {
   navy: '#0F1923', blue: '#1B4FD8', teal: C.teal,
   green: '#25D366', amber: '#FFB400', red: '#EF4444',
-  g100: '#E8EDF3', g400: '#8A9BB5', white: '#fff',
+  g100: '#E8F4FD', g400: '#6B7A8D', white: '#fff',
 }
 
 function useToast() {
