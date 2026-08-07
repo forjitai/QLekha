@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const C = {
-  navy:'#0B1F3A', blue:'#1A6FE8', blueLt:'#3B8EFF', teal:'#0EA5A0',
-  amber:'#FFB400', green:'#22C55E', red:'#EF4444', bg:'#F0F4F8',
-  white:'#fff', g100:'#E8EDF3', g400:'#8A9BB5', g600:'#4A5568', g50:'#F8FAFC',
-}
+const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
 const fmt = (n) => n >= 100000 ? '\u20b9'+(n/100000).toFixed(1)+'L' : n >= 1000 ? '\u20b9'+(n/1000).toFixed(0)+'K' : '\u20b9'+(n||0)
 
 function KPI({ icon, value, label, sub, color, trend }) {
   return (
-    <div style={{background:C.white,borderRadius:16,padding:20,border:'1px solid '+C.g100,borderTop:'3px solid '+color,position:'relative',overflow:'hidden'}}>
+    <div style={{background:C.snow,borderRadius:16,padding:20,border:'1px solid '+C.glass,borderTop:'3px solid '+color,position:'relative',overflow:'hidden'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
         <div style={{width:38,height:38,borderRadius:10,background:color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{icon}</div>
         {trend !== undefined && (
@@ -19,18 +15,18 @@ function KPI({ icon, value, label, sub, color, trend }) {
           </span>
         )}
       </div>
-      <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:26,fontWeight:500,color:C.navy,marginBottom:2}}>{value}</div>
-      <div style={{fontSize:12,color:C.g400}}>{label}</div>
-      {sub && <div style={{fontSize:11,color:C.g600,marginTop:3}}>{sub}</div>}
+      <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:26,fontWeight:500,color:C.ink,marginBottom:2}}>{value}</div>
+      <div style={{fontSize:12,color:C.mist}}>{label}</div>
+      {sub && <div style={{fontSize:11,color:C.ink,marginTop:3}}>{sub}</div>}
     </div>
   )
 }
 
 function QuickAction({ icon, label, href, color }) {
   return (
-    <a href={href} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8,padding:'16px 12px',borderRadius:12,border:'1px solid '+C.g100,background:C.white,textDecoration:'none',transition:'all 0.15s',cursor:'pointer'}}>
+    <a href={href} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8,padding:'16px 12px',borderRadius:12,border:'1px solid '+C.glass,background:C.snow,textDecoration:'none',transition:'all 0.15s',cursor:'pointer'}}>
       <div style={{width:40,height:40,borderRadius:10,background:color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
-      <span style={{fontSize:12,fontWeight:600,color:C.navy}}>{label}</span>
+      <span style={{fontSize:12,fontWeight:600,color:C.ink}}>{label}</span>
     </a>
   )
 }
@@ -109,14 +105,14 @@ export default function Dashboard() {
     return (
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',flexDirection:'column',gap:12}}>
         <div style={{fontSize:32}}>&#128202;</div>
-        <div style={{fontSize:13,color:C.g400}}>Loading your dashboard...</div>
+        <div style={{fontSize:13,color:C.mist}}>Loading your dashboard...</div>
       </div>
     )
   }
 
   const SC = {
     draft:    {bg:'#E8EDF3',color:'#8A9BB5'},
-    sent:     {bg:'rgba(26,111,232,0.1)',color:'#1A6FE8'},
+    sent:     {bg:'rgba(26,111,232,0.1)',color:'#1B4FD8'},
     approved: {bg:'rgba(14,165,160,0.1)',color:'#0EA5A0'},
     rejected: {bg:'rgba(239,68,68,0.08)',color:'#EF4444'},
     expired:  {bg:'rgba(255,180,0,0.1)',color:'#FFB400'},
@@ -129,10 +125,10 @@ export default function Dashboard() {
       {/* Welcome header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24,flexWrap:'wrap',gap:12}}>
         <div>
-          <h2 style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:700,color:C.navy,marginBottom:4}}>
+          <h2 style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:700,color:C.ink,marginBottom:4}}>
             Good day&#44; {co.owner_name||'there'} &#128075;
           </h2>
-          <p style={{fontSize:13,color:C.g400}}>{co.name||'Your business'} &#183; {new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</p>
+          <p style={{fontSize:13,color:C.mist}}>{co.name||'Your business'} &#183; {new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</p>
         </div>
         <a href="/quotes/create" style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'Syne,sans-serif',boxShadow:'0 4px 14px rgba(26,111,232,0.3)'}}>
           &#43; New Quote
@@ -153,21 +149,21 @@ export default function Dashboard() {
 
       {/* Empty onboarding state */}
       {noData && (
-        <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:'48px 32px',marginBottom:24,textAlign:'center'}}>
+        <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:'48px 32px',marginBottom:24,textAlign:'center'}}>
           <div style={{fontSize:52,marginBottom:16}}>&#128640;</div>
-          <h3 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.navy,marginBottom:8}}>Ready to create your first quote?</h3>
-          <p style={{color:C.g400,fontSize:14,maxWidth:400,margin:'0 auto 24px',lineHeight:1.6}}>QLekha makes window quoting fast and professional. Add your first client and create a quote in under 5 minutes.</p>
+          <h3 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.ink,marginBottom:8}}>Ready to create your first quote?</h3>
+          <p style={{color:C.mist,fontSize:14,maxWidth:400,margin:'0 auto 24px',lineHeight:1.6}}>QLekha makes window quoting fast and professional. Add your first client and create a quote in under 5 minutes.</p>
           <div style={{display:'flex',gap:12,justifyContent:'center',flexWrap:'wrap'}}>
-            <a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'Syne,sans-serif'}}>&#128203; Create Quote</a>
-            <a href="/crm" style={{background:'transparent',border:'1px solid '+C.g200,color:C.navy,textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:600}}>&#128100; Add Client</a>
-            <a href="/settings" style={{background:'transparent',border:'1px solid '+C.g200,color:C.navy,textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:600}}>&#9881;&#65039; Setup Business</a>
+            <a href="/quotes/create" style={{background:C.steel,color:'#fff',textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'Syne,sans-serif'}}>&#128203; Create Quote</a>
+            <a href="/crm" style={{background:'transparent',border:'1px solid '+C.fog,color:C.ink,textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:600}}>&#128100; Add Client</a>
+            <a href="/settings" style={{background:'transparent',border:'1px solid '+C.fog,color:C.ink,textDecoration:'none',padding:'11px 22px',borderRadius:10,fontSize:13,fontWeight:600}}>&#9881;&#65039; Setup Business</a>
           </div>
         </div>
       )}
 
       {/* KPI cards */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:20}}>
-        <KPI icon="&#128176;" value={fmt(stats.thisMonthRevenue)} label="Revenue this month" sub={'Total: '+fmt(stats.totalRevenue)} color={C.blue} trend={stats.revTrend}/>
+        <KPI icon="&#128176;" value={fmt(stats.thisMonthRevenue)} label="Revenue this month" sub={'Total: '+fmt(stats.totalRevenue)} color={C.steel} trend={stats.revTrend}/>
         <KPI icon="&#9989;" value={fmt(stats.collected)} label="Total collected" sub={'Outstanding: '+fmt(stats.outstanding)} color={C.green}/>
         <KPI icon="&#128203;" value={String(stats.totalQuotes)} label="Total quotes" sub={stats.sentQuotes+' sent, '+stats.approvedQuotes+' approved'} color={C.teal}/>
         <KPI icon="&#128100;" value={String(stats.totalClients)} label="Clients" sub={stats.activeLeads+' open leads'} color={C.amber}/>
@@ -187,27 +183,27 @@ export default function Dashboard() {
 
       <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:20,marginBottom:20}}>
         {/* Recent quotes */}
-        <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,overflow:'hidden'}}>
-          <div style={{padding:'16px 20px',borderBottom:'1px solid '+C.g100,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,overflow:'hidden'}}>
+          <div style={{padding:'16px 20px',borderBottom:'1px solid '+C.glass,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700}}>Recent Quotes</div>
-            <a href="/quotes" style={{fontSize:12,color:C.blue,textDecoration:'none',fontWeight:600}}>View all &#8594;</a>
+            <a href="/quotes" style={{fontSize:12,color:C.steel,textDecoration:'none',fontWeight:600}}>View all &#8594;</a>
           </div>
           {stats.recentQuotes.length === 0 ? (
-            <div style={{padding:'40px 20px',textAlign:'center',color:C.g400,fontSize:13}}>No quotes yet. <a href="/quotes/create" style={{color:C.blue,textDecoration:'none',fontWeight:600}}>Create one &#8594;</a></div>
+            <div style={{padding:'40px 20px',textAlign:'center',color:C.mist,fontSize:13}}>No quotes yet. <a href="/quotes/create" style={{color:C.steel,textDecoration:'none',fontWeight:600}}>Create one &#8594;</a></div>
           ) : (
             stats.recentQuotes.map((q, i) => {
               const sc = SC[q.status] || SC.draft
               return (
-                <div key={q.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 20px',borderBottom:i<stats.recentQuotes.length-1?'1px solid '+C.g50:'none'}}>
-                  <div style={{width:36,height:36,borderRadius:9,background:C.blue+'15',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'JetBrains Mono,monospace',fontSize:10,fontWeight:600,color:C.blue,flexShrink:0}}>
+                <div key={q.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 20px',borderBottom:i<stats.recentQuotes.length-1?'1px solid '+C.chalk:'none'}}>
+                  <div style={{width:36,height:36,borderRadius:9,background:C.blue+'15',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'JetBrains Mono,monospace',fontSize:10,fontWeight:600,color:C.steel,flexShrink:0}}>
                     {(q.quote_number||'').slice(-3)}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,color:C.navy,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{q.client_name}</div>
-                    <div style={{fontSize:11,color:C.g400}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+                    <div style={{fontSize:13,fontWeight:600,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{q.client_name}</div>
+                    <div style={{fontSize:11,color:C.mist}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
                   </div>
                   <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:100,...sc}}>{q.status}</span>
-                  <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:12,fontWeight:500,color:C.navy,flexShrink:0}}>{fmt(q.grand_total||0)}</div>
+                  <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:12,fontWeight:500,color:C.ink,flexShrink:0}}>{fmt(q.grand_total||0)}</div>
                 </div>
               )
             })
@@ -217,19 +213,19 @@ export default function Dashboard() {
         {/* Quick stats + actions */}
         <div style={{display:'flex',flexDirection:'column',gap:16}}>
           {/* Quote funnel mini */}
-          <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:20}}>
+          <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:20}}>
             <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,marginBottom:14}}>Quote Pipeline</div>
             {[
               {label:'Draft', count:stats.draftQuotes, color:'#8A9BB5'},
-              {label:'Sent', count:stats.sentQuotes, color:C.blue},
+              {label:'Sent', count:stats.sentQuotes, color:C.steel},
               {label:'Approved', count:stats.approvedQuotes, color:C.teal},
             ].map(s => (
               <div key={s.label} style={{marginBottom:10}}>
                 <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
-                  <span style={{fontSize:12,color:C.g600}}>{s.label}</span>
+                  <span style={{fontSize:12,color:C.ink}}>{s.label}</span>
                   <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:12,fontWeight:600,color:s.color}}>{s.count}</span>
                 </div>
-                <div style={{height:6,background:C.g100,borderRadius:100,overflow:'hidden'}}>
+                <div style={{height:6,background:C.glass,borderRadius:100,overflow:'hidden'}}>
                   <div style={{height:'100%',width:(stats.totalQuotes>0?(s.count/stats.totalQuotes)*100:0)+'%',background:s.color,borderRadius:100}}/>
                 </div>
               </div>
@@ -237,17 +233,17 @@ export default function Dashboard() {
           </div>
 
           {/* Invoice status */}
-          <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:20}}>
+          <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:20}}>
             <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,marginBottom:14}}>Invoice Status</div>
             {[
-              {label:'Total', count:stats.totalInvoices, color:C.blue},
+              {label:'Total', count:stats.totalInvoices, color:C.steel},
               {label:'Pending', count:stats.pendingInvoices, color:C.amber},
               {label:'Overdue', count:stats.overdueInvoices, color:C.red},
             ].map(s => (
-              <div key={s.label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0',borderBottom:'1px solid '+C.g50}}>
+              <div key={s.label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0',borderBottom:'1px solid '+C.chalk}}>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <div style={{width:8,height:8,borderRadius:'50%',background:s.color}}/>
-                  <span style={{fontSize:12,color:C.g600}}>{s.label}</span>
+                  <span style={{fontSize:12,color:C.ink}}>{s.label}</span>
                 </div>
                 <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:600,color:s.color}}>{s.count}</span>
               </div>
@@ -257,15 +253,15 @@ export default function Dashboard() {
       </div>
 
       {/* Quick actions */}
-      <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:20,marginBottom:20}}>
+      <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:20,marginBottom:20}}>
         <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,marginBottom:14}}>Quick Actions</div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(100px,1fr))',gap:10}}>
-          <QuickAction icon="&#128203;" label="New Quote" href="/quotes/create" color={C.blue}/>
+          <QuickAction icon="&#128203;" label="New Quote" href="/quotes/create" color={C.steel}/>
           <QuickAction icon="&#129518;" label="Add Client" href="/crm" color={C.teal}/>
           <QuickAction icon="&#128222;" label="Stock" href="/stock" color={C.amber}/>
           <QuickAction icon="&#128196;" label="PDF Demo" href="/pdf-demo" color={C.red}/>
           <QuickAction icon="&#128202;" label="Analytics" href="/analytics" color={'#6366F1'}/>
-          <QuickAction icon="&#9881;&#65039;" label="Settings" href="/settings" color={C.g400}/>
+          <QuickAction icon="&#9881;&#65039;" label="Settings" href="/settings" color={C.mist}/>
         </div>
       </div>
     </div>
