@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase'
 import { sendQuoteSummary, sendInvoiceReminder, normalisePhone } from '../lib/whatsapp'
 
 const C = {
-  blue: '#1A6FE8', green: '#25D366', navy: '#0B1F3A',
-  g100: '#E8EDF3', g400: '#8A9BB5', white: '#fff',
+  blue: '#1A6FE8', green: '#25D366', navy: '#0F1923',
+  g100: '#E8F4FD', g400: '#6B7A8D', white: '#fff',
   red: '#EF4444', amber: '#FFB400', teal: '#0EA5A0',
 }
 
