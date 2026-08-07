@@ -37,7 +37,6 @@ const C = {
   g50:    '#F7F8FA',
   g600:   '#374151',
   bluePale:'rgba(27,79,216,0.08)',
-  purp:   '#7C3AED',
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
