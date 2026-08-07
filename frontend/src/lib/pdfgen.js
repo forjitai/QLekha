@@ -12,8 +12,8 @@
  */
 
 const THEME_COLORS = {
-  classic_blue:  { primary: '#1A6FE8', dark: '#0B1F3A', accent: '#3B8EFF' },
-  midnight:      { primary: '#0B1F3A', dark: '#050E1C', accent: '#1A6FE8' },
+  classic_blue:  { primary: '#1B4FD8', dark: '#0F1923', accent: '#3B8EFF' },
+  midnight:      { primary: '#0F1923', dark: '#090F18', accent: '#1B4FD8' },
   teal_fresh:    { primary: '#0EA5A0', dark: '#065f46', accent: '#34D399' },
   amber_warm:    { primary: '#FFB400', dark: '#92400E', accent: '#FBBF24' },
   forest_green:  { primary: '#16A34A', dark: '#14532d', accent: '#4ADE80' },
