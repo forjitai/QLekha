@@ -13,7 +13,7 @@ import {
 } from '../lib/pdfgen'
 
 const C = {
-  navy: '#0B1F3A', blue: '#1A6FE8', teal: '#0EA5A0',
+  navy: '#0F1923', blue: '#1B4FD8', teal: C.teal,
   green: '#25D366', amber: '#FFB400', red: '#EF4444',
   g100: '#E8EDF3', g400: '#8A9BB5', white: '#fff',
 }
@@ -37,10 +37,10 @@ export function PDFPreviewModal({ isOpen, onClose, docUri, filename, onDownload,
   if (!isOpen) return null
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-      <div style={{ background:C.navy, borderRadius:16, width:'100%', maxWidth:860, height:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 32px 80px rgba(0,0,0,0.4)', overflow:'hidden' }}>
+      <div style={{ background:C.ink, borderRadius:16, width:'100%', maxWidth:860, height:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 32px 80px rgba(0,0,0,0.4)', overflow:'hidden' }}>
         {/* Header */}
         <div style={{ padding:'14px 20px', display:'flex', alignItems:'center', gap:12, borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ width:32, height:32, borderRadius:8, background:C.blue, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>📄</div>
+          <div style={{ width:32, height:32, borderRadius:8, background:C.steel, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>📄</div>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:'Syne,sans-serif', fontSize:14, fontWeight:700, color:'#fff' }}>{filename}</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>PDF Preview</div>
@@ -51,7 +51,7 @@ export function PDFPreviewModal({ isOpen, onClose, docUri, filename, onDownload,
                 💬 WhatsApp
               </button>
             )}
-            <button onClick={onDownload} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, border:'none', background:C.blue, color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+            <button onClick={onDownload} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, border:'none', background:C.steel, color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer' }}>
               ⬇ Download
             </button>
             <button onClick={onClose} style={{ width:32, height:32, borderRadius:8, border:'1px solid rgba(255,255,255,0.15)', background:'transparent', color:'rgba(255,255,255,0.6)', fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
@@ -125,10 +125,10 @@ export function QuotePDFBar({ quote, company, client, items, bank }) {
     <>
       <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap', position:'relative' }}>
-        <button onClick={handlePreview} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid ' + C.g100, background:C.white, color:C.navy, fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
+        <button onClick={handlePreview} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid ' + C.g100, background:C.snow, color:C.ink, fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
           {loading ? <Spin/> : '👁'} Preview PDF
         </button>
-        <button onClick={handleDownload} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'none', background:C.blue, color:'#fff', fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
+        <button onClick={handleDownload} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'none', background:C.steel, color:'#fff', fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
           {loading ? <Spin/> : '⬇'} Download PDF
         </button>
         <button onClick={handleWhatsApp} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid rgba(37,211,102,0.3)', background:'rgba(37,211,102,0.06)', color:'#25D366', fontSize:12, fontWeight:600, cursor:'pointer' }}>
@@ -201,10 +201,10 @@ export function InvoicePDFBar({ invoice, company, client, items, bank }) {
     <>
       <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap', position:'relative' }}>
-        <button onClick={handlePreview} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid ' + C.g100, background:C.white, color:C.navy, fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
+        <button onClick={handlePreview} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid ' + C.g100, background:C.snow, color:C.ink, fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
           {loading ? <Spin/> : '👁'} Preview PDF
         </button>
-        <button onClick={handleDownload} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'none', background:C.blue, color:'#fff', fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
+        <button onClick={handleDownload} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'none', background:C.steel, color:'#fff', fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
           {loading ? <Spin/> : '⬇'} Download PDF
         </button>
         <button onClick={handleWhatsApp} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid rgba(37,211,102,0.3)', background:'rgba(37,211,102,0.06)', color:'#25D366', fontSize:12, fontWeight:600, cursor:'pointer' }}>
@@ -294,9 +294,9 @@ export function PDFDemoPage() {
   }
 
   const THEMES = [
-    {k:'classic_blue',  l:'Classic Blue',  c:'#1A6FE8'},
-    {k:'midnight',      l:'Midnight',       c:'#0B1F3A'},
-    {k:'teal_fresh',    l:'Teal Fresh',     c:'#0EA5A0'},
+    {k:'classic_blue',  l:'Classic Blue',  c:'#1B4FD8'},
+    {k:'midnight',      l:'Midnight',       c:'#0F1923'},
+    {k:'teal_fresh',    l:'Teal Fresh',     c:C.teal},
     {k:'amber_warm',    l:'Amber Warm',     c:'#FFB400'},
     {k:'forest_green',  l:'Forest Green',   c:'#16A34A'},
     {k:'deep_purple',   l:'Deep Purple',    c:'#7C3AED'},
@@ -308,7 +308,7 @@ export function PDFDemoPage() {
 
       {/* Header */}
       <div style={{ marginBottom:28 }}>
-        <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:C.navy, marginBottom:4 }}>PDF Generator</h2>
+        <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:700, color:C.ink, marginBottom:4 }}>PDF Generator</h2>
         <p style={{ fontSize:13, color:C.g400 }}>Generate branded quote and invoice PDFs. Pick a theme to preview.</p>
       </div>
 
@@ -316,21 +316,21 @@ export function PDFDemoPage() {
       <div style={{ background:'#fff', borderRadius:16, border:'1px solid ' + C.g100, padding:20, marginBottom:24 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
           <div>
-            <div style={{ fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700, color:C.navy }}>Demo Quote</div>
+            <div style={{ fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700, color:C.ink }}>Demo Quote</div>
             <div style={{ fontSize:12, color:C.g400, marginTop:2 }}>Q-2025-042 · Priya Sharma · 3 items</div>
           </div>
           <div style={{ textAlign:'right' }}>
-            <div style={{ fontFamily:'JetBrains Mono,monospace', fontSize:20, fontWeight:500, color:C.navy }}>₹1,03,199</div>
+            <div style={{ fontFamily:'JetBrains Mono,monospace', fontSize:20, fontWeight:500, color:C.ink }}>₹1,03,199</div>
             <div style={{ fontSize:11, color:C.g400 }}>incl. 18% GST</div>
           </div>
         </div>
         {demoItems.map((it, i) => (
           <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderTop:'1px solid ' + C.g100, fontSize:13 }}>
             <div>
-              <span style={{ fontWeight:600, color:C.navy }}>{it.title}</span>
+              <span style={{ fontWeight:600, color:C.ink }}>{it.title}</span>
               <span style={{ color:C.g400, marginLeft:8, fontSize:11 }}>{it.width_mm}×{it.height_mm}mm × {it.quantity}</span>
             </div>
-            <span style={{ fontFamily:'JetBrains Mono,monospace', color:C.navy }}>₹{it.total_amount.toLocaleString('en-IN')}</span>
+            <span style={{ fontFamily:'JetBrains Mono,monospace', color:C.ink }}>₹{it.total_amount.toLocaleString('en-IN')}</span>
           </div>
         ))}
       </div>
@@ -343,7 +343,7 @@ export function PDFDemoPage() {
             <button key={t.k} onClick={() => generateDemo(t.k)} disabled={generating}
               style={{ padding:'12px 8px', borderRadius:12, border:'2px solid ' + t.c + '40', background:t.c + '10', cursor:generating?'default':'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
               <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,' + t.c + ',' + t.c + 'aa)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Syne,sans-serif', fontSize:13, fontWeight:800, color:'#fff' }}>Q</div>
-              <div style={{ fontSize:11, fontWeight:600, color:C.navy }}>{t.l}</div>
+              <div style={{ fontSize:11, fontWeight:600, color:C.ink }}>{t.l}</div>
             </button>
           ))}
         </div>
@@ -362,7 +362,7 @@ export function PDFDemoPage() {
       )}
 
       <div style={{ background:'rgba(26,111,232,0.06)', border:'1px solid rgba(26,111,232,0.15)', borderRadius:12, padding:16 }}>
-        <div style={{ fontSize:12, fontWeight:700, color:C.blue, marginBottom:6 }}>How it works</div>
+        <div style={{ fontSize:12, fontWeight:700, color:C.steel, marginBottom:6 }}>How it works</div>
         <div style={{ fontSize:12, color:'#4A5568', lineHeight:1.7 }}>
           PDFs are generated entirely in the browser using jsPDF — no server needed. Click any theme above to generate a live preview. From the preview you can download the PDF or open WhatsApp with a pre-filled message to share it with your client.
         </div>
