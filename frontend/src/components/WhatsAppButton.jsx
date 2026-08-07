@@ -68,7 +68,7 @@ export function WhatsAppSendBtn({ phone, type, data, onSent, label = 'WhatsApp' 
           display: 'inline-flex', alignItems: 'center', gap: 5,
           padding: '5px 10px', borderRadius: 7,
           border: '1px solid rgba(37,211,102,0.3)',
-          background: sent ? 'rgba(37,211,102,0.08)' : C.white,
+          background: sent ? 'rgba(37,211,102,0.08)' : C.snow,
           color: C.green, fontSize: 11, fontWeight: 600,
           cursor: loading || sent ? 'default' : 'pointer',
           fontFamily: 'Inter,sans-serif',
@@ -130,12 +130,12 @@ export function WhatsAppModal({ isOpen, onClose, contact, companyId, companyName
   const inpStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
     border: '1.5px solid #E8EDF3', fontSize: 13, outline: 'none',
-    color: C.navy, boxSizing: 'border-box', fontFamily: 'Inter,sans-serif',
+    color: C.ink, boxSizing: 'border-box', fontFamily: 'Inter,sans-serif',
   }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: C.white, borderRadius: 16, width: '100%', maxWidth: 440, boxShadow: '0 24px 64px rgba(11,31,58,0.2)', overflow: 'hidden' }}>
+      <div style={{ background: C.snow, borderRadius: 16, width: '100%', maxWidth: 440, boxShadow: '0 24px 64px rgba(11,31,58,0.2)', overflow: 'hidden' }}>
         <div style={{ background: '#075E54', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💬</div>
           <div style={{ flex: 1 }}>
@@ -146,17 +146,17 @@ export function WhatsAppModal({ isOpen, onClose, contact, companyId, companyName
         </div>
 
         <div style={{ padding: 20 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: C.g400, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Send to</label>
+          <label style={{ fontSize: 11, fontWeight: 700, color: C.mist, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 5 }}>Send to</label>
           <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" style={{ ...inpStyle, marginBottom: 14 }}/>
 
           <div style={{ marginBottom: 14 }}>
             {TYPES.map(m => (
               <div key={m.k} onClick={() => setMsgType(m.k)}
-                style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid ' + (msgType === m.k ? '#075E54' : C.g100), background: msgType === m.k ? 'rgba(7,94,84,0.05)' : C.white, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                style={{ padding: '9px 12px', borderRadius: 10, border: '1.5px solid ' + (msgType === m.k ? '#075E54' : C.glass), background: msgType === m.k ? 'rgba(7,94,84,0.05)' : C.snow, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <span>{m.i}</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: msgType === m.k ? '#075E54' : C.navy }}>{m.l}</div>
-                  <div style={{ fontSize: 11, color: C.g400 }}>{m.d}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: msgType === m.k ? '#075E54' : C.ink }}>{m.l}</div>
+                  <div style={{ fontSize: 11, color: C.mist }}>{m.d}</div>
                 </div>
                 {msgType === m.k && <span style={{ marginLeft: 'auto', color: '#075E54' }}>✓</span>}
               </div>
@@ -178,7 +178,7 @@ export function WhatsAppModal({ isOpen, onClose, contact, companyId, companyName
             style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: loading ? '#ccc' : '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: loading ? 'default' : 'pointer', fontFamily: 'Syne,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {loading ? '⏳ Opening...' : '💬 Send via WhatsApp'}
           </button>
-          <p style={{ fontSize: 11, color: C.g400, marginTop: 10, textAlign: 'center' }}>Opens WhatsApp Web/App with pre-filled text. Add API token in Settings for direct API sending.</p>
+          <p style={{ fontSize: 11, color: C.mist, marginTop: 10, textAlign: 'center' }}>Opens WhatsApp Web/App with pre-filled text. Add API token in Settings for direct API sending.</p>
         </div>
       </div>
     </div>
