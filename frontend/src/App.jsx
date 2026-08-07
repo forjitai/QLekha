@@ -132,6 +132,7 @@ function Landing() {
 }
 
 function Auth() {
+  const isMobile = window.innerWidth < 768
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
