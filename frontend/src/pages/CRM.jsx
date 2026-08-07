@@ -2,45 +2,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
-const fmt = (n) => n>=100000?'\u20b9'+(n/100000).toFixed(1)+'L':n>=1000?'\u20b9'+(n/1000).toFixed(0)+'K':'\u20b9'+(n||0)
-
-function AddLeadModal({ companyId, onClose, onDone }) {
-  const [form, setForm] = useState({name:'',phone:'',source:'walkin',status:'new',value_estimate:''})
-  const [loading, setLoading] = useState(false)
-  const [err, setErr] = useState('')
-  const upd = (k,v) => setForm(p=>({...p,[k]:v}))
-  const C2={navy:'#0F1923',blue:'#1B4FD8',teal:'#0EA5A0',g100:'#E8EDF3',g200:'#D1D9E6',white:'#fff',red:'#EF4444'}
-  const IS={width:'100%',padding:'9px 12px',borderRadius:8,border:'1.5px solid '+C2.g100,fontSize:13,outline:'none',color:C2.navy,background:C2.white,boxSizing:'border-box',fontFamily:'Inter,sans-serif',marginBottom:10}
-  async function save() {
-    if (!form.name) return setErr('Name required')
-    setLoading(true)
-    const {data,error} = await supabase.from('leads').insert({
-      ...form, company_id:companyId,
-      value_estimate: form.value_estimate ? parseFloat(form.value_estimate) : null
-    }).select().single()
-    setLoading(false)
-    if (error) return setErr(error?.message||JSON.stringify(error))
-    onDone(data)
-  }
-  return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-      <div style={{background:C2.white,borderRadius:16,width:'100%',maxWidth:420,padding:24}}>
-        <div style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700,color:C2.navy,marginBottom:16}}>New Lead</div>
-        {err&&<div style={{background:'rgba(239,68,68,0.08)',borderRadius:8,padding:'8px 12px',fontSize:12,color:C2.red,marginBottom:10}}>{err}</div>}
-        <input value={form.name} onChange={e=>upd('name',e.target.value)} placeholder="Lead name *" style={IS}/>
-        <input type="tel" value={form.phone} onChange={e=>upd('phone',e.target.value)} placeholder="Phone" style={IS}/>
-        <select value={form.source} onChange={e=>upd('source',e.target.value)} style={{...IS,appearance:'none'}}>
-          {['walkin','referral','justdial','instagram','facebook','website','other'].map(s=><option key={s} value={s}>{s}</option>)}
-        </select>
-        <input type="number" value={form.value_estimate} onChange={e=>upd('value_estimate',e.target.value)} placeholder="Estimate value (₹)" style={IS}/>
-        <div style={{display:'flex',gap:10,marginTop:4}}>
-          <button onClick={onClose} style={{flex:1,padding:10,borderRadius:8,border:'1.5px solid '+C2.g100,background:'transparent',color:C2.navy,fontSize:13,cursor:'pointer'}}>Cancel</button>
-          <button onClick={save} disabled={loading} style={{flex:2,padding:10,borderRadius:8,border:'none',background:C2.teal,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>{loading?'Saving...':'Add Lead'}</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function AddClientModal({ companyId, onClose, onDone }) {
   const [form, setForm] = useState({name:'',phone:'',email:'',address:'',city:'',tag:'individual',gst_number:''})
@@ -56,7 +17,7 @@ function AddClientModal({ companyId, onClose, onDone }) {
     setLoading(true)
     const { error } = await supabase.from('clients').insert({ ...form, company_id: companyId, is_active: true })
     setLoading(false)
-    if (error) return setErr(error.message)
+    if (error) return setErr(error?.message||error?.msg||JSON.stringify(error))
     onDone()
   }
 
