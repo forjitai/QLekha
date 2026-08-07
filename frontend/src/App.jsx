@@ -39,9 +39,32 @@ const NAV = [
 
 export function Layout({ children }) {
   const loc = window.location.pathname
+  const [menuOpen, setMenuOpen] = React.useState(false)
+  const isMob = window.innerWidth < 768
   return (
-    <div style={{display:'flex',height:'100vh',overflow:'hidden'}}>
-      <aside style={{width:240,flexShrink:0,background:C.navy,display:'flex',flexDirection:'column',height:'100vh'}}>
+    <div style={{display:'flex',height:'100vh',overflow:'hidden',flexDirection:'column'}}>
+      {isMob&&<div style={{background:C.navy,padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+        <a href="/dashboard" style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:800,color:'#fff',textDecoration:'none'}}>Q<span style={{color:C.blueLt}}>Lekha</span></a>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <a href="/quotes/create" style={{background:C.blue,color:'#fff',textDecoration:'none',padding:'6px 12px',borderRadius:7,fontSize:12,fontWeight:700}}>+ Quote</a>
+          <button onClick={()=>setMenuOpen(v=>!v)} style={{background:'none',border:'none',color:'#fff',fontSize:22,cursor:'pointer',padding:'4px 8px'}}>{menuOpen?'✕':'☰'}</button>
+        </div>
+      </div>}
+      {isMob&&menuOpen&&<div style={{position:'fixed',inset:0,zIndex:100,background:'rgba(0,0,0,0.5)'}} onClick={()=>setMenuOpen(false)}>
+        <div style={{width:240,height:'100%',background:C.navy,display:'flex',flexDirection:'column'}} onClick={e=>e.stopPropagation()}>
+          <div style={{padding:'20px 20px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}><span style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:'#fff'}}>Q<span style={{color:C.blueLt}}>Lekha</span></span></div>
+          <nav style={{padding:12,flex:1,overflowY:'auto'}}>
+            {NAV.map(n=>{const active=loc===n.path;return(<a key={n.path} href={n.path} onClick={()=>setMenuOpen(false)} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,marginBottom:2,textDecoration:'none',background:active?'rgba(26,111,232,0.15)':'transparent',color:active?C.blue:'rgba(255,255,255,0.6)',fontWeight:active?600:400,fontSize:14}}><span style={{fontSize:16}} dangerouslySetInnerHTML={{__html:n.icon}}/><span>{n.label}</span></a>)})}
+          </nav>
+          <div style={{padding:12,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+            <button onClick={()=>supabase.auth.signOut().then(()=>{window.location.href='/auth'})} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:10,borderRadius:8,background:'transparent',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.5)',fontSize:13}}>
+              <span>🚪</span> Sign Out
+            </button>
+          </div>
+        </div>
+      </div>}
+      <div style={{display:'flex',flex:1,overflow:'hidden',flexDirection:'row'}}>
+      <aside style={{width:240,flexShrink:0,background:C.navy,display:isMob?'none':'flex',flexDirection:'column',height:'100vh'}}>
         <div style={{padding:'20px 20px 16px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
           <a href="/dashboard" style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:'#fff',textDecoration:'none'}}>
             Q<span style={{color:C.blueLt}}>Lekha</span>
