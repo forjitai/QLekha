@@ -315,7 +315,7 @@ function Auth() {
   ]
   const IS = {width:'100%',padding:'11px 14px',borderRadius:10,border:'1.5px solid '+C.fog,fontSize:14,fontFamily:'Inter,sans-serif',color:C.ink,background:C.snow,outline:'none',marginBottom:16,boxSizing:'border-box'}
   const BS = {width:'100%',padding:'13px',borderRadius:10,border:'none',background:C.steel,color:C.snow,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:4}
-  const LS = {fontSize:11,fontWeight:700,color:C.g600,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:5}
+  const LS = {fontSize:11,fontWeight:700,color:C.ink,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:5}
   const Lnk = ({onClick:o, children:c}) => <button onClick={o} style={{background:'none',border:'none',cursor:'pointer',color:C.steel,fontWeight:600,fontSize:13,fontFamily:'Inter,sans-serif'}}>{c}</button>
   const Btn = ({ghost, style:s, ...p}) => <button {...p} style={{...BS,...(ghost?{background:'transparent',border:'1.5px solid '+C.fog,color:C.ink,marginTop:8}:{}),...(s||{})}}/>
 
@@ -549,7 +549,7 @@ function Settings() {
         name:'QLekha',
         description:plan.l+' Plan - Monthly',
         prefill:{name:co?.owner_name||'',email:co?.email||'',contact:co?.phone||''},
-        theme:{color:'#1A6FE8'},
+        theme:{color:C.steel},
         handler:async function(response){
           await supabase.from('companies').update({
             plan:plan.k,
@@ -563,7 +563,7 @@ function Settings() {
       new window.Razorpay(options).open()
     }
     const TABS=[{k:'company',i:'&#127962;',l:'Company'},{k:'bank',i:'&#127974;',l:'Bank & GST'},{k:'pdf',i:'&#127912;',l:'PDF'},{k:'wa',i:'&#128172;',l:'WhatsApp'},{k:'users',i:'&#128101;',l:'Users'},{k:'plan',i:'&#9889;',l:'Plan'}]
-  const THEMES=[{k:'classic_blue',l:'Classic Blue',c:'#1A6FE8'},{k:'midnight',l:'Midnight',c:'#0B1F3A'},{k:'teal_fresh',l:'Teal Fresh',c:'#0EA5A0'},{k:'amber_warm',l:'Amber Warm',c:'#FFB400'},{k:'forest_green',l:'Forest Green',c:'#16A34A'},{k:'deep_purple',l:'Deep Purple',c:'#7C3AED'}]
+  const THEMES=[{k:'classic_blue',l:'Classic Blue',c:C.steel},{k:'midnight',l:'Midnight',c:C.ink},{k:'teal_fresh',l:'Teal Fresh',c:'#0EA5A0'},{k:'amber_warm',l:'Amber Warm',c:'#FFB400'},{k:'forest_green',l:'Forest Green',c:'#16A34A'},{k:'deep_purple',l:'Deep Purple',c:'#7C3AED'}]
   const PLANS=[{k:'trial',l:'Trial',p:'\u20b90',d:'14 days',c:C.mist,f:['5 quotes','1 user']},{k:'starter',l:'Starter',p:'\u20b9499',d:'per month',c:C.steel,f:['50 quotes/mo','WhatsApp']},{k:'growth',l:'Growth',p:'\u20b91,499',d:'per month',c:C.teal,f:['Unlimited quotes','5 users']},{k:'pro',l:'Pro',p:'\u20b93,499',d:'per month',c:C.purp,f:['Everything','15 users','API']}]
   const ROLES=['owner','admin','sales','accounts','workshop','viewer']
   const RC={owner:C.purp,admin:C.steel,sales:C.teal,accounts:C.amber,workshop:C.green,viewer:C.mist}
@@ -601,7 +601,7 @@ function Settings() {
 function Quotes(){
   const[quotes,setQuotes]=useState([]);const[filter,setFilter]=useState('all');const[loading,setLoading]=useState(true);const[profile,setProfile]=useState(null);const[waModal,setWaModal]=useState(null);const[converting,setConverting]=useState(null);const[toast,setToast]=useState(null)
   const showToast=(msg,type='success')=>{setToast({msg,type});setTimeout(()=>setToast(null),3000)}
-  const SC={draft:{bg:'#E8EDF3',color:'#8A9BB5'},sent:{bg:'rgba(26,111,232,0.1)',color:'#1A6FE8'},approved:{bg:'rgba(14,165,160,0.1)',color:'#0EA5A0'},rejected:{bg:'rgba(239,68,68,0.08)',color:'#EF4444'}}
+  const SC={draft:{bg:C.chalk,color:C.mist},sent:{bg:'rgba(27,79,216,0.1)',color:C.steel},approved:{bg:'rgba(14,165,160,0.1)',color:C.teal},rejected:{bg:'rgba(220,38,38,0.08)',color:C.red}}
   useEffect(()=>{async function load(){setLoading(true);const{data:{user}}=await supabase.auth.getUser();if(!user)return setLoading(false);const{data:ud}=await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single();if(!ud)return setLoading(false);setProfile(ud);const{data}=await supabase.from('quotes').select('*,clients(name,phone)').eq('company_id',ud.company_id).order('created_at',{ascending:false});setQuotes(data||[]);setLoading(false)}load()},[])
   async function updateStatus(id,status){await supabase.from('quotes').update({status}).eq('id',id);setQuotes(p=>p.map(q=>q.id===id?{...q,status}:q));showToast('Status updated to '+status)}
   async function convertToInvoice(quote){
@@ -635,7 +635,7 @@ function Quotes(){
       <a href="/quotes/create" style={{background:C.steel,color:'#fff',textDecoration:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600}}>+ New Quote</a>
     </div>
     <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
-      {['all','draft','sent','approved','rejected'].map(s=>(<button key={s} onClick={()=>setFilter(s)} style={{padding:'6px 14px',borderRadius:100,fontSize:12,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.ink:C.glass,background:filter===s?C.ink:C.snow,color:filter===s?'#fff':'#4A5568'}}>{s.charAt(0).toUpperCase()+s.slice(1)} {s==='all'?'('+quotes.length+')':'('+quotes.filter(q=>q.status===s).length+')'}</button>))}
+      {['all','draft','sent','approved','rejected'].map(s=>(<button key={s} onClick={()=>setFilter(s)} style={{padding:'6px 14px',borderRadius:100,fontSize:12,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.ink:C.glass,background:filter===s?C.ink:C.snow,color:filter===s?'#fff':C.ink}}>{s.charAt(0).toUpperCase()+s.slice(1)} {s==='all'?'('+quotes.length+')':'('+quotes.filter(q=>q.status===s).length+')'}</button>))}
     </div>
     <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,overflow:'hidden'}}>
       {loading?<div style={{padding:40,textAlign:'center',color:C.mist}}>Loading...</div>
@@ -646,7 +646,7 @@ function Quotes(){
       </div>
       :<div style={{overflowX:'auto'}}>
         <table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead><tr style={{background:'#F8FAFC'}}>{['Quote #','Client','Amount','Status','Date','Actions'].map(h=>(<th key={h} style={{padding:'11px 16px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>))}</tr></thead>
+          <thead><tr style={{background:C.chalk}}>{['Quote #','Client','Amount','Status','Date','Actions'].map(h=>(<th key={h} style={{padding:'11px 16px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>))}</tr></thead>
           <tbody>{filtered.map(q=>{
             const sc=SC[q.status]||SC.draft
             const phone=q.clients?.phone||q.client_phone
@@ -691,12 +691,12 @@ export default function App() {
       <Route path="/" element={<Landing/>}/>
       <Route path="/auth" element={session ? <Navigate to="/dashboard" replace/> : <Auth/>}/>
       <Route path="/dashboard" element={session ? <Layout><Dashboard/></Layout> : <Navigate to="/auth" replace/>}/>
-      <Route path="/quotes" element={session ? <Quotes/> : <Navigate to="/auth" replace/>}/>
+      <Route path="/quotes" element={session ? <Layout><Quotes/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/quotes/create" element={session?<Layout><QuoteWizard/></Layout>:<Navigate to="/auth" replace/>}/>
       <Route path="/billing" element={session ? <Layout><Billing/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/stock" element={session ? <Layout><Stock/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/crm" element={session ? <Layout><CRM/></Layout> : <Navigate to="/auth" replace/>}/>
-      <Route path="/analytics" element={session ? <Analytics/> : <Navigate to="/auth" replace/>}/>
+      <Route path="/analytics" element={session ? <Layout><Analytics/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/settings" element={session ? <Layout><Settings/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/pdf-demo" element={session ? <Layout><PDFDemoPage/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="*" element={<Navigate to="/" replace/>}/>
