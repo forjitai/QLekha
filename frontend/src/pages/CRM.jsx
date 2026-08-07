@@ -270,7 +270,7 @@ export default function CRM() {
         </div>
       )}
 
-      {addLead&&<AddLeadModal companyId={profile?.company_id} onClose={()=>setAddLead(false)} onDone={(l)=>{setLeads(p=>[l,...p]);setAddLead(false)}}/>
+      {addLead&&<AddLeadModal companyId={profile?.company_id} onClose={()=>setAddLead(false)} onDone={(l)=>{setLeads(p=>[l,...p]);setAddLead(false)}}/>}
       {addClient&&<AddClientModal companyId={profile?.company_id} onClose={()=>setAddClient(false)} onDone={()=>{setAddClient(false);load()}}/>}
     </div>
   )
