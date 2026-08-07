@@ -2,25 +2,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
-const fmt = (n) => n >= 100000 ? '\u20b9'+(n/100000).toFixed(1)+'L' : n >= 1000 ? '\u20b9'+(n/1000).toFixed(0)+'K' : '\u20b9'+(n||0)
-
-function KPI({ icon, value, label, sub, color, trend }) {
-  return (
-    <div style={{background:C.snow,borderRadius:16,padding:20,border:'1px solid '+C.glass,borderTop:'3px solid '+color,position:'relative',overflow:'hidden'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:12}}>
-        <div style={{width:38,height:38,borderRadius:10,background:color+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{icon}</div>
-        {trend !== undefined && (
-          <span style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:100,background:trend>=0?C.green+'20':C.red+'20',color:trend>=0?C.green:C.red}}>
-            {trend>=0?'+':''}{trend}%
-          </span>
-        )}
-      </div>
-      <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:26,fontWeight:500,color:C.ink,marginBottom:2}}>{value}</div>
-      <div style={{fontSize:12,color:C.mist}}>{label}</div>
-      {sub && <div style={{fontSize:11,color:C.ink,marginTop:3}}>{sub}</div>}
-    </div>
-  )
-}
 
 function QuickAction({ icon, label, href, color }) {
   return (
@@ -111,7 +92,7 @@ export default function Dashboard() {
   }
 
   const SC = {
-    draft:    {bg:'#E8EDF3',color:'#8A9BB5'},
+    draft:    {bg:C.glass,color:C.mist},
     sent:     {bg:'rgba(26,111,232,0.1)',color:'#1B4FD8'},
     approved: {bg:'rgba(14,165,160,0.1)',color:'#0EA5A0'},
     rejected: {bg:'rgba(239,68,68,0.08)',color:'#EF4444'},
@@ -216,7 +197,7 @@ export default function Dashboard() {
           <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:20}}>
             <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,marginBottom:14}}>Quote Pipeline</div>
             {[
-              {label:'Draft', count:stats.draftQuotes, color:'#8A9BB5'},
+              {label:'Draft', count:stats.draftQuotes, color:C.mist},
               {label:'Sent', count:stats.sentQuotes, color:C.steel},
               {label:'Approved', count:stats.approvedQuotes, color:C.teal},
             ].map(s => (
