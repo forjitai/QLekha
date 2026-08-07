@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { generateQuotePDF, downloadPDF, getPDFDataUri } from '../lib/pdfgen'
 
-const C={navy:'#0B1F3A',blue:'#1A6FE8',teal:'#0EA5A0',amber:'#FFB400',green:'#22C55E',red:'#EF4444',white:'#fff',g100:'#E8EDF3',g200:'#D1D9E6',g400:'#8A9BB5',g600:'#4A5568',g50:'#F8FAFC',purp:'#8B5CF6'}
-const IS={width:'100%',padding:'10px 12px',borderRadius:9,border:'1.5px solid '+C.g200,fontSize:13,fontFamily:'Inter,sans-serif',color:C.navy,background:C.white,outline:'none',boxSizing:'border-box',marginBottom:12}
-const LB={fontSize:11,fontWeight:700,color:C.g600,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:5}
+const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
+const IS={width:'100%',padding:'10px 12px',borderRadius:9,border:'1.5px solid '+C.fog,fontSize:13,fontFamily:'Inter,sans-serif',color:C.ink,background:C.snow,outline:'none',boxSizing:'border-box',marginBottom:12}
+const LB={fontSize:11,fontWeight:700,color:C.ink,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:5}
 
 function StepBar({step}){
   const steps=['Client','Windows','Materials','Review']
@@ -13,12 +13,12 @@ function StepBar({step}){
       {steps.map((s,i)=>(
         <div key={s} style={{display:'flex',alignItems:'center',flex:i<steps.length-1?1:'auto'}}>
           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-            <div style={{width:30,height:30,borderRadius:'50%',background:i+1<step?C.teal:i+1===step?C.blue:C.g200,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:i+1<=step?'#fff':C.g400,transition:'all 0.3s'}}>
+            <div style={{width:30,height:30,borderRadius:'50%',background:i+1<step?C.teal:i+1===step?C.steel:C.fog,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:i+1<=step?'#fff':C.mist,transition:'all 0.3s'}}>
               {i+1<step?'✓':i+1}
             </div>
-            <span style={{fontSize:10,fontWeight:600,color:i+1===step?C.blue:i+1<step?C.teal:C.g400,whiteSpace:'nowrap'}}>{s}</span>
+            <span style={{fontSize:10,fontWeight:600,color:i+1===step?C.steel:i+1<step?C.teal:C.mist,whiteSpace:'nowrap'}}>{s}</span>
           </div>
-          {i<steps.length-1&&<div style={{flex:1,height:2,background:i+1<step?C.teal:C.g200,margin:'0 6px',marginBottom:14,transition:'all 0.3s'}}/>}
+          {i<steps.length-1&&<div style={{flex:1,height:2,background:i+1<step?C.teal:C.fog,margin:'0 6px',marginBottom:14,transition:'all 0.3s'}}/>}
         </div>
       ))}
     </div>
@@ -56,30 +56,30 @@ function Step1({profile,onNext,initial}){
     setErr('')
   }
 
-  const TC={residential:C.blue,commercial:C.teal,builder:C.purp,dealer:C.amber,govt:C.green,other:C.g400}
+  const TC={residential:C.steel,commercial:C.teal,builder:C.purp,dealer:C.amber,govt:C.green,other:C.mist}
 
   return(
     <div>
-      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.navy,marginBottom:4}}>Select Client</div>
-      <p style={{fontSize:13,color:C.g400,marginBottom:16}}>Who is this quote for?</p>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>Select Client</div>
+      <p style={{fontSize:13,color:C.mist,marginBottom:16}}>Who is this quote for?</p>
       {selected&&(
-        <div style={{background:'rgba(26,111,232,0.06)',border:'2px solid '+C.blue,borderRadius:12,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div style={{background:'rgba(26,111,232,0.06)',border:'2px solid '+C.steel,borderRadius:12,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div>
-            <div style={{fontWeight:700,fontSize:14,color:C.navy}}>{selected.name}</div>
-            <div style={{fontSize:12,color:C.g400}}>{[selected.phone,selected.city].filter(Boolean).join(' · ')}</div>
+            <div style={{fontWeight:700,fontSize:14,color:C.ink}}>{selected.name}</div>
+            <div style={{fontSize:12,color:C.mist}}>{[selected.phone,selected.city].filter(Boolean).join(' · ')}</div>
           </div>
-          <button onClick={()=>setSelected(null)} style={{background:'none',border:'none',color:C.g400,cursor:'pointer',fontSize:18}}>✕</button>
+          <button onClick={()=>setSelected(null)} style={{background:'none',border:'none',color:C.mist,cursor:'pointer',fontSize:18}}>✕</button>
         </div>
       )}
       {!selected&&(
         <>
           <div style={{display:'flex',gap:8,marginBottom:12}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search clients..." style={{...IS,marginBottom:0,flex:1}}/>
-            <button onClick={()=>setAdding(v=>!v)} style={{padding:'10px 14px',borderRadius:9,border:'1.5px solid '+C.blue,background:adding?C.blue:'transparent',color:adding?'#fff':C.blue,fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>+ New</button>
+            <button onClick={()=>setAdding(v=>!v)} style={{padding:'10px 14px',borderRadius:9,border:'1.5px solid '+C.steel,background:adding?C.steel:'transparent',color:adding?'#fff':C.steel,fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>+ New</button>
           </div>
           {adding&&(
-            <div style={{background:C.g50,borderRadius:12,padding:16,marginBottom:12,border:'1px solid '+C.g100}}>
-              <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.navy,marginBottom:12}}>New Client</div>
+            <div style={{background:C.chalk,borderRadius:12,padding:16,marginBottom:12,border:'1px solid '+C.glass}}>
+              <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.ink,marginBottom:12}}>New Client</div>
               {err&&<div style={{background:'rgba(239,68,68,0.08)',borderRadius:8,padding:'8px 12px',fontSize:12,color:C.red,marginBottom:10}}>{err}</div>}
               <label style={LB}>Name *</label>
               <input value={form.name} onChange={e=>upd('name',e.target.value)} placeholder="Client name" style={IS}/>
@@ -90,28 +90,28 @@ function Step1({profile,onNext,initial}){
               <label style={LB}>Tag</label>
               <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:12}}>
                 {['individual','builder','contractor','dealer','architect','corporate'].map(t=>(
-                  <button key={t} onClick={()=>upd('tag',t)} style={{padding:'4px 10px',borderRadius:6,border:'1.5px solid '+(form.tag===t?C.blue:C.g200),background:form.tag===t?C.blue+'10':C.white,color:form.tag===t?C.blue:C.g600,fontSize:11,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
+                  <button key={t} onClick={()=>upd('tag',t)} style={{padding:'4px 10px',borderRadius:6,border:'1.5px solid '+(form.tag===t?C.steel:C.fog),background:form.tag===t?C.blue+'10':C.snow,color:form.tag===t?C.steel:C.ink,fontSize:11,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>{t}</button>
                 ))}
               </div>
-              <button onClick={addClient} disabled={loading} style={{width:'100%',padding:'10px',borderRadius:9,border:'none',background:C.blue,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>{loading?'Saving...':'Add Client'}</button>
+              <button onClick={addClient} disabled={loading} style={{width:'100%',padding:'10px',borderRadius:9,border:'none',background:C.steel,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>{loading?'Saving...':'Add Client'}</button>
             </div>
           )}
           <div style={{maxHeight:280,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
-            {filtered.length===0&&<div style={{padding:20,textAlign:'center',color:C.g400,fontSize:13}}>No clients found</div>}
+            {filtered.length===0&&<div style={{padding:20,textAlign:'center',color:C.mist,fontSize:13}}>No clients found</div>}
             {filtered.map(c=>(
-              <div key={c.id} onClick={()=>setSelected(c)} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 14px',borderRadius:10,border:'1.5px solid '+C.g100,background:C.white,cursor:'pointer'}}>
+              <div key={c.id} onClick={()=>setSelected(c)} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 14px',borderRadius:10,border:'1.5px solid '+C.glass,background:C.snow,cursor:'pointer'}}>
                 <div style={{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'#fff',flexShrink:0}}>{c.name[0].toUpperCase()}</div>
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:600,fontSize:13,color:C.navy}}>{c.name}</div>
-                  <div style={{fontSize:11,color:C.g400}}>{[c.phone,c.city].filter(Boolean).join(' · ')}</div>
+                  <div style={{fontWeight:600,fontSize:13,color:C.ink}}>{c.name}</div>
+                  <div style={{fontSize:11,color:C.mist}}>{[c.phone,c.city].filter(Boolean).join(' · ')}</div>
                 </div>
-                <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,background:(TC[c.tag]||C.g400)+'15',color:TC[c.tag]||C.g400,textTransform:'capitalize'}}>{c.tag}</span>
+                <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,background:(TC[c.tag]||C.mist)+'15',color:TC[c.tag]||C.mist,textTransform:'capitalize'}}>{c.tag}</span>
               </div>
             ))}
           </div>
         </>
       )}
-      <button onClick={()=>selected&&onNext(selected)} disabled={!selected} style={{width:'100%',marginTop:20,padding:'13px',borderRadius:10,border:'none',background:selected?C.blue:'#ccc',color:'#fff',fontSize:14,fontWeight:700,cursor:selected?'pointer':'default',fontFamily:'Syne,sans-serif'}}>Continue →</button>
+      <button onClick={()=>selected&&onNext(selected)} disabled={!selected} style={{width:'100%',marginTop:20,padding:'13px',borderRadius:10,border:'none',background:selected?C.steel:'#ccc',color:'#fff',fontSize:14,fontWeight:700,cursor:selected?'pointer':'default',fontFamily:'Syne,sans-serif'}}>Continue →</button>
     </div>
   )
 }
@@ -128,13 +128,13 @@ function Step2({onNext,onBack,initial}){
 
   return(
     <div>
-      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.navy,marginBottom:4}}>Windows</div>
-      <p style={{fontSize:13,color:C.g400,marginBottom:16}}>Add each window with size and quantity.</p>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>Windows</div>
+      <p style={{fontSize:13,color:C.mist,marginBottom:16}}>Add each window with size and quantity.</p>
       <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:16}}>
         {items.map((item,idx)=>(
-          <div key={item.id} style={{background:C.g50,borderRadius:12,padding:16,border:'1px solid '+C.g100}}>
+          <div key={item.id} style={{background:C.chalk,borderRadius:12,padding:16,border:'1px solid '+C.glass}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-              <span style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.navy}}>Window {idx+1}</span>
+              <span style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.ink}}>Window {idx+1}</span>
               {items.length>1&&<button onClick={()=>remove(item.id)} style={{background:'none',border:'none',color:C.red,cursor:'pointer',fontSize:16}}>✕</button>}
             </div>
             <label style={LB}>Type</label>
@@ -160,10 +160,10 @@ function Step2({onNext,onBack,initial}){
           </div>
         ))}
       </div>
-      <button onClick={addWindow} style={{width:'100%',padding:'10px',borderRadius:9,border:'2px dashed '+C.g200,background:'transparent',color:C.g400,fontSize:13,fontWeight:600,cursor:'pointer',marginBottom:20}}>+ Add Window</button>
+      <button onClick={addWindow} style={{width:'100%',padding:'10px',borderRadius:9,border:'2px dashed '+C.fog,background:'transparent',color:C.mist,fontSize:13,fontWeight:600,cursor:'pointer',marginBottom:20}}>+ Add Window</button>
       <div style={{display:'flex',gap:10}}>
-        <button onClick={onBack} style={{flex:1,padding:'13px',borderRadius:10,border:'1.5px solid '+C.g200,background:'transparent',color:C.navy,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
-        <button onClick={()=>items.length>0&&onNext(items)} style={{flex:2,padding:'13px',borderRadius:10,border:'none',background:C.blue,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif'}}>Continue →</button>
+        <button onClick={onBack} style={{flex:1,padding:'13px',borderRadius:10,border:'1.5px solid '+C.fog,background:'transparent',color:C.ink,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
+        <button onClick={()=>items.length>0&&onNext(items)} style={{flex:2,padding:'13px',borderRadius:10,border:'none',background:C.steel,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif'}}>Continue →</button>
       </div>
     </div>
   )
@@ -223,21 +223,21 @@ function Step3({windows,profile,onNext,onBack,initial}){
 
   const grandTotal=items.reduce((s,i)=>s+i.total_amount,0)
 
-  if(loading)return<div style={{padding:40,textAlign:'center',color:C.g400}}>Loading stock...</div>
+  if(loading)return<div style={{padding:40,textAlign:'center',color:C.mist}}>Loading stock...</div>
 
   return(
     <div>
-      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.navy,marginBottom:4}}>Pricing</div>
-      <p style={{fontSize:13,color:C.g400,marginBottom:16}}>Set price per window. Pick profile and glass to auto-calculate.</p>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>Pricing</div>
+      <p style={{fontSize:13,color:C.mist,marginBottom:16}}>Set price per window. Pick profile and glass to auto-calculate.</p>
       <div style={{display:'flex',flexDirection:'column',gap:14,marginBottom:16}}>
         {items.map((item,idx)=>(
-          <div key={item.id} style={{background:C.g50,borderRadius:12,padding:16,border:'1px solid '+C.g100}}>
+          <div key={item.id} style={{background:C.chalk,borderRadius:12,padding:16,border:'1px solid '+C.glass}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
               <div>
-                <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.navy}}>{item.title}</div>
-                <div style={{fontSize:11,color:C.g400}}>{item.width_mm}×{item.height_mm}mm · Qty {item.quantity}</div>
+                <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.ink}}>{item.title}</div>
+                <div style={{fontSize:11,color:C.mist}}>{item.width_mm}×{item.height_mm}mm · Qty {item.quantity}</div>
               </div>
-              <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:14,fontWeight:700,color:C.blue}}>₹{item.total_amount.toLocaleString('en-IN')}</div>
+              <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:14,fontWeight:700,color:C.steel}}>₹{item.total_amount.toLocaleString('en-IN')}</div>
             </div>
             {profiles.length>0&&(
               <>
@@ -276,13 +276,13 @@ function Step3({windows,profile,onNext,onBack,initial}){
           </div>
         ))}
       </div>
-      <div style={{background:C.navy,borderRadius:12,padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+      <div style={{background:C.ink,borderRadius:12,padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
         <span style={{color:'rgba(255,255,255,0.6)',fontSize:13}}>Grand Total (incl. GST)</span>
         <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:20,fontWeight:700,color:'#fff'}}>₹{grandTotal.toLocaleString('en-IN')}</span>
       </div>
       <div style={{display:'flex',gap:10}}>
-        <button onClick={onBack} style={{flex:1,padding:'13px',borderRadius:10,border:'1.5px solid '+C.g200,background:'transparent',color:C.navy,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
-        <button onClick={()=>onNext(items)} style={{flex:2,padding:'13px',borderRadius:10,border:'none',background:C.blue,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif'}}>Review →</button>
+        <button onClick={onBack} style={{flex:1,padding:'13px',borderRadius:10,border:'1.5px solid '+C.fog,background:'transparent',color:C.ink,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
+        <button onClick={()=>onNext(items)} style={{flex:2,padding:'13px',borderRadius:10,border:'none',background:C.steel,color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif'}}>Review →</button>
       </div>
     </div>
   )
@@ -349,13 +349,13 @@ function Step4({client,items,profile,onBack,onDone}){
     return(
       <div style={{textAlign:'center'}}>
         <div style={{fontSize:52,marginBottom:12}}>🎉</div>
-        <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.navy,marginBottom:4}}>Quote Created!</div>
-        <div style={{fontSize:13,color:C.g400,marginBottom:6}}>#{saved.quote_number}</div>
-        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:24,fontWeight:700,color:C.blue,marginBottom:24}}>₹{grandTotal.toLocaleString('en-IN')}</div>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.ink,marginBottom:4}}>Quote Created!</div>
+        <div style={{fontSize:13,color:C.mist,marginBottom:6}}>#{saved.quote_number}</div>
+        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:24,fontWeight:700,color:C.steel,marginBottom:24}}>₹{grandTotal.toLocaleString('en-IN')}</div>
         <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
           {pdfUri&&(
             <button onClick={()=>{const a=document.createElement('a');a.href=pdfUri;a.download='Quote-'+saved.quote_number+'.pdf';a.click()}}
-              style={{padding:'11px 20px',borderRadius:10,border:'none',background:C.blue,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
+              style={{padding:'11px 20px',borderRadius:10,border:'none',background:C.steel,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>
               ↓ Download PDF
             </button>
           )}
@@ -366,7 +366,7 @@ function Step4({client,items,profile,onBack,onDone}){
             </button>
           )}
           <button onClick={()=>window.location.href='/quotes'}
-            style={{padding:'11px 20px',borderRadius:10,border:'1.5px solid '+C.g200,background:'transparent',color:C.navy,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+            style={{padding:'11px 20px',borderRadius:10,border:'1.5px solid '+C.fog,background:'transparent',color:C.ink,fontSize:13,fontWeight:600,cursor:'pointer'}}>
             View All Quotes
           </button>
         </div>
@@ -379,22 +379,22 @@ function Step4({client,items,profile,onBack,onDone}){
 
   return(
     <div>
-      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.navy,marginBottom:4}}>Review</div>
-      <p style={{fontSize:13,color:C.g400,marginBottom:16}}>Check everything before saving.</p>
-      <div style={{background:C.g50,borderRadius:12,padding:16,marginBottom:14,border:'1px solid '+C.g100}}>
-        <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.navy,marginBottom:10}}>Client</div>
-        <div style={{fontSize:13,fontWeight:600,color:C.navy}}>{client.name}</div>
-        <div style={{fontSize:12,color:C.g400}}>{[client.phone,client.city].filter(Boolean).join(' · ')}</div>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>Review</div>
+      <p style={{fontSize:13,color:C.mist,marginBottom:16}}>Check everything before saving.</p>
+      <div style={{background:C.chalk,borderRadius:12,padding:16,marginBottom:14,border:'1px solid '+C.glass}}>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.ink,marginBottom:10}}>Client</div>
+        <div style={{fontSize:13,fontWeight:600,color:C.ink}}>{client.name}</div>
+        <div style={{fontSize:12,color:C.mist}}>{[client.phone,client.city].filter(Boolean).join(' · ')}</div>
       </div>
-      <div style={{background:C.g50,borderRadius:12,padding:16,marginBottom:14,border:'1px solid '+C.g100}}>
-        <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.navy,marginBottom:10}}>Windows ({items.length})</div>
+      <div style={{background:C.chalk,borderRadius:12,padding:16,marginBottom:14,border:'1px solid '+C.glass}}>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:C.ink,marginBottom:10}}>Windows ({items.length})</div>
         {items.map((it,i)=>(
-          <div key={it.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<items.length-1?'1px solid '+C.g100:'none'}}>
+          <div key={it.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<items.length-1?'1px solid '+C.glass:'none'}}>
             <div>
-              <div style={{fontSize:13,fontWeight:600,color:C.navy}}>{it.title}</div>
-              <div style={{fontSize:11,color:C.g400}}>{it.width_mm}×{it.height_mm}mm · Qty {it.quantity} · GST {it.gst_rate}%</div>
+              <div style={{fontSize:13,fontWeight:600,color:C.ink}}>{it.title}</div>
+              <div style={{fontSize:11,color:C.mist}}>{it.width_mm}×{it.height_mm}mm · Qty {it.quantity} · GST {it.gst_rate}%</div>
             </div>
-            <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:600,color:C.navy}}>₹{it.total_amount.toLocaleString('en-IN')}</div>
+            <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:600,color:C.ink}}>₹{it.total_amount.toLocaleString('en-IN')}</div>
           </div>
         ))}
       </div>
@@ -416,7 +416,7 @@ function Step4({client,items,profile,onBack,onDone}){
       </div>
       <label style={LB}>Notes</label>
       <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Any special instructions..." style={{...IS,resize:'vertical',minHeight:60}}/>
-      <div style={{background:C.navy,borderRadius:12,padding:'14px 18px',marginBottom:16}}>
+      <div style={{background:C.ink,borderRadius:12,padding:'14px 18px',marginBottom:16}}>
         {[['Subtotal',subtotal],['GST',Math.round(gstAmt)],['Installation',parseFloat(installation)||0],['Discount',-(parseFloat(discount)||0)]].map(([l,v])=>v!==0&&(
           <div key={l} style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
             <span style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{l}</span>
@@ -430,7 +430,7 @@ function Step4({client,items,profile,onBack,onDone}){
       </div>
       {err&&<div style={{background:'rgba(239,68,68,0.08)',borderRadius:8,padding:'10px 14px',fontSize:13,color:C.red,marginBottom:12}}>{err}</div>}
       <div style={{display:'flex',gap:10}}>
-        <button onClick={onBack} style={{flex:1,padding:'13px',borderRadius:10,border:'1.5px solid '+C.g200,background:'transparent',color:C.navy,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
+        <button onClick={onBack} style={{flex:1,padding:'13px',borderRadius:10,border:'1.5px solid '+C.fog,background:'transparent',color:C.ink,fontSize:14,fontWeight:600,cursor:'pointer'}}>← Back</button>
         <button onClick={saveQuote} disabled={saving} style={{flex:2,padding:'13px',borderRadius:10,border:'none',background:saving?'#ccc':'linear-gradient(135deg,'+C.blue+','+C.teal+')',color:'#fff',fontSize:14,fontWeight:700,cursor:saving?'default':'pointer',fontFamily:'Syne,sans-serif'}}>
           {saving?'⏳ Saving...':'🚀 Save Quote'}
         </button>
@@ -458,17 +458,17 @@ export default function QuoteWizard(){
     load()
   },[])
 
-  if(loading)return<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',color:C.g400,fontSize:13}}>Loading...</div>
+  if(loading)return<div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh',color:C.mist,fontSize:13}}>Loading...</div>
 
   return(
     <div style={{fontFamily:'Inter,sans-serif',maxWidth:640,margin:'0 auto'}}>
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
-        <a href="/quotes" style={{color:C.g400,textDecoration:'none',fontSize:13}}>← Quotes</a>
-        <span style={{color:C.g200}}>/</span>
-        <span style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700,color:C.navy}}>New Quote</span>
+        <a href="/quotes" style={{color:C.mist,textDecoration:'none',fontSize:13}}>← Quotes</a>
+        <span style={{color:C.fog}}>/</span>
+        <span style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700,color:C.ink}}>New Quote</span>
       </div>
       <StepBar step={step}/>
-      <div style={{background:C.white,borderRadius:16,border:'1px solid '+C.g100,padding:24}}>
+      <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:24}}>
         {step===1&&<Step1 profile={profile} initial={client} onNext={c=>{setClient(c);setStep(2)}}/>}
         {step===2&&<Step2 initial={windows} onNext={w=>{setWindows(w);setStep(3)}} onBack={()=>setStep(1)}/>}
         {step===3&&<Step3 windows={windows} profile={profile} initial={priceItems.length?priceItems:null} onNext={items=>{setPriceItems(items);setStep(4)}} onBack={()=>setStep(2)}/>}
