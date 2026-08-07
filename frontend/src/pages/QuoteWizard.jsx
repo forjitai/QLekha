@@ -3,27 +3,6 @@ import { supabase } from '../lib/supabase'
 import { generateQuotePDF, downloadPDF, getPDFDataUri } from '../lib/pdfgen'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
-const IS={width:'100%',padding:'10px 12px',borderRadius:9,border:'1.5px solid '+C.fog,fontSize:13,fontFamily:'Inter,sans-serif',color:C.ink,background:C.snow,outline:'none',boxSizing:'border-box',marginBottom:12}
-const LB={fontSize:11,fontWeight:700,color:C.ink,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:5}
-
-function StepBar({step}){
-  const steps=['Client','Windows','Materials','Review']
-  return(
-    <div style={{display:'flex',alignItems:'center',marginBottom:28}}>
-      {steps.map((s,i)=>(
-        <div key={s} style={{display:'flex',alignItems:'center',flex:i<steps.length-1?1:'auto'}}>
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-            <div style={{width:30,height:30,borderRadius:'50%',background:i+1<step?C.teal:i+1===step?C.steel:C.fog,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:i+1<=step?'#fff':C.mist,transition:'all 0.3s'}}>
-              {i+1<step?'✓':i+1}
-            </div>
-            <span style={{fontSize:10,fontWeight:600,color:i+1===step?C.steel:i+1<step?C.teal:C.mist,whiteSpace:'nowrap'}}>{s}</span>
-          </div>
-          {i<steps.length-1&&<div style={{flex:1,height:2,background:i+1<step?C.teal:C.fog,margin:'0 6px',marginBottom:14,transition:'all 0.3s'}}/>}
-        </div>
-      ))}
-    </div>
-  )
-}
 
 // STEP 1: Client
 function Step1({profile,onNext,initial}){
@@ -48,7 +27,7 @@ function Step1({profile,onNext,initial}){
     setLoading(true)
     const{data,error}=await supabase.from('clients').insert({...form,company_id:profile.company_id,is_active:true}).select().single()
     setLoading(false)
-    if(error)return setErr(error.message)
+    if(error)return setErr(error?.message||error?.msg||JSON.stringify(error))
     setClients(p=>[data,...p])
     setSelected(data)
     setAdding(false)
@@ -342,7 +321,7 @@ function Step4({client,items,profile,onBack,onDone}){
       )
       setPdfUri(getPDFDataUri(doc))
       setSaving(false)
-    }catch(e){setSaving(false);setErr(e.message)}
+    }catch(e){setSaving(false);setErr(e?.message||e?.msg||JSON.stringify(e))}
   }
 
   if(saved){
