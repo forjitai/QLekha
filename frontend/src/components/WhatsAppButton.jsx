@@ -6,6 +6,8 @@ const C = {
   blue: '#1B4FD8', green: '#25D366', navy: '#0F1923',
   g100: '#E8F4FD', g400: '#6B7A8D', white: '#fff',
   red: '#EF4444', amber: '#FFB400', teal: '#0EA5A0',
+  ink: '#0F1923', steel: '#1B4FD8', snow: '#FFFFFF',
+  mist: '#6B7A8D', glass: '#E8F4FD', fog: '#C4CDD8', chalk: '#F7F8FA',
 }
 
 function useToast() {
