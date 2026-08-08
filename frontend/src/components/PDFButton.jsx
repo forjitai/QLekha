@@ -13,9 +13,11 @@ import {
 } from '../lib/pdfgen'
 
 const C = {
-  navy: '#0F1923', blue: '#1B4FD8', teal: C.teal,
+  navy: '#0F1923', blue: '#1B4FD8', teal: '#0EA5A0',
   green: '#25D366', amber: '#FFB400', red: '#EF4444',
   g100: '#E8F4FD', g400: '#6B7A8D', white: '#fff',
+  ink: '#0F1923', steel: '#1B4FD8', snow: '#FFFFFF',
+  mist: '#6B7A8D', glass: '#E8F4FD', fog: '#C4CDD8', chalk: '#F7F8FA',
 }
 
 function useToast() {
