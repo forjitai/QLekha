@@ -117,11 +117,13 @@ export function WhatsAppModal({ isOpen, onClose, contact, companyId, companyName
     window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(text), '_blank')
 
     if (companyId) {
-      await supabase.from('whatsapp_messages').insert({
-        company_id: companyId, to_phone: num,
-        message_type: msgType, status: 'sent',
-        sent_at: new Date().toISOString(),
-      })
+      try {
+        await supabase.from('whatsapp_messages').insert({
+          company_id: companyId, to_phone: num,
+          message_type: msgType, status: 'sent',
+          sent_at: new Date().toISOString(),
+        })
+      } catch(e) { console.error('WA log error:', e?.message) }
     }
     setLoading(false)
     show('Opened WhatsApp ✓')
