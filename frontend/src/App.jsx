@@ -306,11 +306,20 @@ function Auth() {
   const [ob, setOb] = useState({ company_name:'', owner_name:'', phone:'', city:'', language:'en' })
   const signupUserRef = useRef(null)
 
-  // Handle email confirmation link click — Supabase redirects here with session in URL
+  // Handle email confirmation link ONLY when URL contains token params
   useEffect(() => {
+    const hash = window.location.hash
+    const params = new URLSearchParams(window.location.search)
+    const isConfirmLink = hash.includes('access_token') || 
+                          hash.includes('error') ||
+                          params.get('token_hash') || 
+                          params.get('type') === 'signup' ||
+                          params.get('type') === 'recovery'
+    if (!isConfirmLink) return  // normal /auth visit — do nothing
+    // This is a confirmation link click — pick up the session Supabase set
+    setOk('Confirming your email...')
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // User confirmed via email link and has a session — check if onboarded
         supabase.from('users').select('id').eq('id', session.user.id).single()
           .then(({ data }) => {
             if (data) {
@@ -319,14 +328,10 @@ function Auth() {
               setMode('onboard'); setStep(1)
             }
           })
+      } else {
+        setErr('Confirmation link expired. Please sign up again.')
       }
     })
-    // Also handle hash-based tokens from email links
-    const hash = window.location.hash
-    const params = new URLSearchParams(window.location.search)
-    if (hash.includes('access_token') || params.get('token_hash') || params.get('type') === 'signup') {
-      setOk('Email confirmed! Setting up your account...')
-    }
   }, [])
 
   useEffect(() => {
