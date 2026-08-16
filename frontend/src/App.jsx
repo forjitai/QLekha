@@ -54,6 +54,24 @@ const NAV = [
 ]
 
 // ─── Splash ──────────────────────────────────────────────────────────────────
+function AuthRedirect({ session }) {
+  const [ready, setReady] = React.useState(false)
+  const [needsOnboard, setNeedsOnboard] = React.useState(false)
+  React.useEffect(() => {
+    if (!session?.user) { window.location.href = '/auth'; return }
+    supabase.from('users').select('id').eq('id', session.user.id).single()
+      .then(({ data }) => {
+        if (data) {
+          window.location.href = '/dashboard'
+        } else {
+          setNeedsOnboard(true); setReady(true)
+        }
+      })
+  }, [])
+  if (needsOnboard) return <Auth startOnboard={true}/>
+  return <Splash/>
+}
+
 function Splash() {
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100vh',background:C.ink,gap:12}}>
@@ -290,9 +308,9 @@ function Landing() {
   )
 }
 
-function Auth() {
+function Auth({ startOnboard = false }) {
 
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState(startOnboard ? 'onboard' : 'login')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [cpw, setCpw] = useState('')
@@ -414,9 +432,9 @@ function Auth() {
       setErr('Account already exists. Please sign in.')
       return
     }
-    // Normal flow: OTP sent to email
-    setMode('otp'); setTimer(60); setOtp('')
-    setOk('Check your email for a 6-digit code.')
+    // Email confirmation link sent — tell user to click it
+    setMode('link_sent')
+    setOk('Check your email and click the confirmation link to complete signup.')
   }
 
   async function verify() {
@@ -536,6 +554,15 @@ function Auth() {
           <Btn onClick={signup} disabled={loading}>{loading?'\u23f3 Creating...':'Create account'}</Btn>
           <div style={{textAlign:'center',marginTop:14,fontSize:13,color:C.mist}}>Already have one? <Lnk onClick={()=>{setMode('login');clr()}}>Sign in</Lnk></div>
         </>}
+
+        {mode==='link_sent' && <div style={{textAlign:'center',padding:'20px 0'}}>
+          <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(27,79,216,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,margin:'0 auto 16px'}}>&#128231;</div>
+          <div style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:800,color:C.ink,marginBottom:8}}>Check your email</div>
+          <div style={{fontSize:14,color:C.mist,marginBottom:4}}>We sent a confirmation link to</div>
+          <div style={{fontSize:14,fontWeight:600,color:C.ink,marginBottom:24}}>{email}</div>
+          <div style={{fontSize:13,color:C.mist,lineHeight:1.7,marginBottom:24}}>Click <strong>Confirm email address</strong> in the email.<br/>You will be signed in automatically.</div>
+          <div style={{fontSize:12,color:C.mist}}>Wrong email? <Lnk onClick={()=>{setMode('signup');clr()}}>Go back</Lnk></div>
+        </div>}
 
         {mode==='otp' && <div style={{textAlign:'center'}}>
           <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(26,111,232,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 16px'}}>&#128231;</div>
@@ -788,7 +815,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing/>}/>
-      <Route path="/auth" element={session ? <Navigate to="/dashboard" replace/> : <Auth/>}/>
+      <Route path="/auth" element={session ? <AuthRedirect session={session}/> : <Auth/>}/>
       <Route path="/dashboard" element={session ? <Layout><Dashboard/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/quotes" element={session ? <Layout><Quotes/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/quotes/create" element={session?<Layout><QuoteWizard/></Layout>:<Navigate to="/auth" replace/>}/>
