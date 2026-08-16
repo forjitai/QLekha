@@ -324,29 +324,74 @@ function Auth() {
     setLoading(true)
     const { error:e } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
-    if(e){if(e.message.toLowerCase().includes('not confirmed')){setErr('Email not confirmed. Please go to: supabase.com/dashboard/project/yqtgfgvcohuwaaugxlrz/auth/providers → Email → turn OFF Confirm email → Save. Then sign in.')}else if(e.message.includes('Invalid'))setErr('Wrong email or password.');else setErr(e?.message||e?.msg||JSON.stringify(e))}else window.location.href='/dashboard'
+    if (e) {
+      const msg = e?.message || e?.msg || JSON.stringify(e)
+      if (msg.toLowerCase().includes('not confirmed')) {
+        // Auto-resend OTP so user can confirm their email
+        const { error:re } = await supabase.auth.resend({ type:'signup', email })
+        if (!re) {
+          setMode('otp'); setTimer(60); setOtp('')
+          setOk('A 6-digit code was sent to ' + email + '. Enter it to confirm your account.')
+        } else {
+          setErr('Email not yet confirmed. Check your inbox for the original OTP, or try signing up again.')
+        }
+      } else if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')) {
+        setErr('Wrong email or password.')
+      } else {
+        setErr(msg)
+      }
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 
   async function signup() {
     clr(); if (!email || pw.length < 8) return setErr('Email required, min 8 char password.')
     if (pw !== cpw) return setErr('Passwords do not match.')
     setLoading(true)
-    const { error:e } = await supabase.auth.signUp({ email, password:pw })
+    const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
     if (e) {
-      const msg = e.message || e.msg || JSON.stringify(e)
-      if (!msg.toLowerCase().includes('already')) return setErr(msg)
+      const msg = e?.message || e?.msg || JSON.stringify(e)
+      const lower = msg.toLowerCase()
+      if (lower.includes('rate limit') || lower.includes('429')) {
+        return setErr('Too many signup attempts. Please wait a minute and try again.')
+      }
+      if (lower.includes('already registered') || lower.includes('user already')) {
+        // User exists but unconfirmed - resend OTP
+        const { error:re } = await supabase.auth.resend({ type:'signup', email })
+        if (!re) {
+          setMode('otp'); setTimer(60); setOtp('')
+          setOk('Account already exists. A new confirmation code was sent to ' + email)
+        } else {
+          setErr('Account exists. Try signing in, or use Forgot Password.')
+        }
+        return
+      }
+      return setErr(msg)
+    }
+    // Supabase returns identities:[] when email already confirmed (existing user)
+    if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setErr('An account with this email already exists. Please sign in.')
+      return
     }
     setMode('otp'); setTimer(60); setOtp('')
-    setOk('Check your email for a 6-digit code.')
+    setOk('Check your email for a 6-digit code. It may take a minute.')
   }
 
   async function verify() {
     clr(); const token = otp.replace(/\s/g,'')
     if (token.length !== 6) return setErr('Enter the full 6-digit code.')
     setLoading(true)
-    const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'email' })
-    if (e) { setLoading(false); return setErr('Incorrect or expired code. Try again. Error: '+(e.message||JSON.stringify(e))) }
+    const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'signup' })
+    if (e) {
+      setLoading(false)
+      const m = e?.message || JSON.stringify(e)
+      if (m.toLowerCase().includes('expired') || m.toLowerCase().includes('otp')) {
+        return setErr('Code expired or incorrect. Click Resend code to get a new one.')
+      }
+      return setErr('Verification failed: ' + m)
+    }
     const { error:loginErr } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
     if (loginErr) return setErr('Verified! Now sign in with your password.')
@@ -468,8 +513,22 @@ function Auth() {
           </div>
           <Btn onClick={verify} disabled={loading}>{loading?'\u23f3 Verifying...':'Verify'}</Btn>
           <div style={{marginTop:14,fontSize:13,color:C.mist}}>
-            <button onClick={async()=>{if(timer>0)return;setLoading(true);await supabase.auth.resend({type:'signup',email});setLoading(false);setTimer(60);setOk('New code sent.')}}
-              style={{background:'none',border:'none',cursor:timer>0?'default':'pointer',color:timer>0?C.mist:C.steel,fontWeight:600,fontSize:13}}>
+            <button onClick={async()=>{
+              if(timer>0)return
+              clr(); setLoading(true)
+              const{error:re}=await supabase.auth.resend({type:'signup',email})
+              setLoading(false)
+              if(re){
+                const m=re?.message||re?.msg||JSON.stringify(re)
+                if(m.toLowerCase().includes('rate limit')||m.toLowerCase().includes('429')){
+                  setErr('Too many attempts. Please wait 60 seconds before requesting another code.')
+                }else{
+                  setErr('Could not resend: '+m)
+                }
+              }else{
+                setTimer(60); setOk('New code sent to '+email+'. Check your inbox.')
+              }
+            }} style={{background:'none',border:'none',cursor:timer>0?'default':'pointer',color:timer>0?C.mist:C.steel,fontWeight:600,fontSize:13}}>
               {timer>0?'Resend in '+timer+'s':'Resend code'}
             </button>
           </div>
