@@ -68,6 +68,7 @@ export default function CRM() {
 
   async function load() {
     setLoading(true)
+    try {
     const{data:{user}}=await supabase.auth.getUser()
     if(!user)return setLoading(false)
     const{data:ud}=await supabase.from('users').select('company_id,companies(name)').eq('id',user.id).single()
@@ -80,7 +81,11 @@ export default function CRM() {
     ])
     setClients(cr.data||[])
     setLeads(lr.data||[])
-    setLoading(false)
+      } catch(e) {
+      console.error("CRM load:", e?.message || JSON.stringify(e))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filteredClients = clients.filter(c=>[c.name,c.phone,c.city,c.email].some(v=>v?.toLowerCase().includes(search.toLowerCase())))
