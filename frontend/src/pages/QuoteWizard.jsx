@@ -23,6 +23,7 @@ function Step1({profile,onNext,initial}){
   const filtered=clients.filter(c=>c.name?.toLowerCase().includes(search.toLowerCase())||c.phone?.includes(search))
 
   async function addClient(){
+    try {
     if(!form.name.trim())return setErr('Name required')
     setLoading(true)
     const{data,error}=await supabase.from('clients').insert({...form,company_id:profile.company_id,is_active:true}).select().single()
@@ -33,6 +34,7 @@ function Step1({profile,onNext,initial}){
     setAdding(false)
     setForm({name:'',phone:'',email:'',city:'',tag:'individual'})
     setErr('')
+      } catch(e) { setErr(e?.message||JSON.stringify(e)) }
   }
 
   const TC={individual:C.steel,commercial:C.teal,builder:C.purp,dealer:C.amber,govt:C.green,other:C.mist}
