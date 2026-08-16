@@ -89,18 +89,23 @@ export default function Billing() {
 
   async function load() {
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return setLoading(false)
-    const { data: ud } = await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single()
-    if (!ud) return setLoading(false)
-    setProfile(ud)
-    const [ir, pr] = await Promise.all([
-      supabase.from('invoices').select('*').eq('company_id',ud.company_id).order('created_at',{ascending:false}),
-      supabase.from('payments').select('*').eq('company_id',ud.company_id).order('payment_date',{ascending:false}).limit(30),
-    ])
-    setInvoices(ir.data||[])
-    setPayments(pr.data||[])
-    setLoading(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return setLoading(false)
+      const { data: ud, error: ue } = await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single()
+      if (ue || !ud) return setLoading(false)
+      setProfile(ud)
+      const [ir, pr] = await Promise.all([
+        supabase.from('invoices').select('*').eq('company_id',ud.company_id).order('created_at',{ascending:false}),
+        supabase.from('payments').select('*').eq('company_id',ud.company_id).order('payment_date',{ascending:false}),
+      ])
+      setInvoices(ir.data||[])
+      setPayments(pr.data||[])
+    } catch(e) {
+      console.error('Billing load error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function downloadInvoicePDF(inv) {
