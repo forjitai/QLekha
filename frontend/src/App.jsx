@@ -68,7 +68,12 @@ function Splash() {
 // ─── Layout ──────────────────────────────────────────────────────────────────
 export function Layout({ children }) {
   const loc = window.location.pathname
-  const [mob] = useState(window.innerWidth < 768)
+  const [mob, setMob] = useState(window.innerWidth < 768)
+  useEffect(() => {
+    const fn = () => setMob(window.innerWidth < 768)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
 
   const sidebarStyle = {
     width: 220,
