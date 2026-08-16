@@ -306,6 +306,29 @@ function Auth() {
   const [ob, setOb] = useState({ company_name:'', owner_name:'', phone:'', city:'', language:'en' })
   const signupUserRef = useRef(null)
 
+  // Handle email confirmation link click — Supabase redirects here with session in URL
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        // User confirmed via email link and has a session — check if onboarded
+        supabase.from('users').select('id').eq('id', session.user.id).single()
+          .then(({ data }) => {
+            if (data) {
+              window.location.href = '/dashboard'
+            } else {
+              setMode('onboard'); setStep(1)
+            }
+          })
+      }
+    })
+    // Also handle hash-based tokens from email links
+    const hash = window.location.hash
+    const params = new URLSearchParams(window.location.search)
+    if (hash.includes('access_token') || params.get('token_hash') || params.get('type') === 'signup') {
+      setOk('Email confirmed! Setting up your account...')
+    }
+  }, [])
+
   useEffect(() => {
     if (timer > 0) { const t = setTimeout(() => setTimer(v => v-1), 1000); return () => clearTimeout(t) }
   }, [timer])
