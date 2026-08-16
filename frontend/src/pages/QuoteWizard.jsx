@@ -35,7 +35,7 @@ function Step1({profile,onNext,initial}){
     setErr('')
   }
 
-  const TC={residential:C.steel,commercial:C.teal,builder:C.purp,dealer:C.amber,govt:C.green,other:C.mist}
+  const TC={individual:C.steel,commercial:C.teal,builder:C.purp,dealer:C.amber,govt:C.green,other:C.mist}
 
   return(
     <div>
