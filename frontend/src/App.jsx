@@ -360,31 +360,35 @@ function Auth() {
     const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
     if (e) {
-      const msg = e?.message || e?.msg || e?.error_description || e?.code || JSON.stringify(e) || 'Signup failed'
+      // Extract error message from all possible Supabase error shapes
+      const msg = e?.message || e?.msg || e?.error_description || e?.code ||
+                  (e?.status ? 'Server error (' + e.status + '). Please try again.' : '') ||
+                  (typeof e === 'string' ? e : 'Signup failed. Please try again.')
       const lower = msg.toLowerCase()
       if (lower.includes('rate limit') || lower.includes('429')) {
-        return setErr('Too many signup attempts. Please wait a minute and try again.')
+        return setErr('Too many attempts. Please wait a minute.')
       }
-      if (lower.includes('already registered') || lower.includes('user already')) {
-        // User exists but unconfirmed - resend OTP
-        const { error:re } = await supabase.auth.resend({ type:'signup', email })
-        if (!re) {
-          setMode('otp'); setTimer(60); setOtp('')
-          setOk('Account already exists. A new confirmation code was sent to ' + email)
-        } else {
-          setErr('Account exists. Try signing in, or use Forgot Password.')
-        }
-        return
+      if (lower.includes('already') || lower.includes('registered')) {
+        return setErr('Account already exists. Please sign in.')
       }
-      return setErr(msg)
+      if (lower.includes('unable to validate') || lower.includes('500') || msg === '{}' || msg === 'null') {
+        return setErr('Could not send OTP email. Please try again or contact support.')
+      }
+      return setErr(msg || 'Signup failed. Please try again.')
     }
-    // Supabase returns identities:[] when email already confirmed (existing user)
-    if (data?.user && data.user.identities && data.user.identities.length === 0) {
-      setErr('An account with this email already exists. Please sign in.')
+    // If Supabase auto-confirmed (email confirm disabled) - go straight to onboarding
+    if (data?.session) {
+      setMode('onboard'); setStep(1)
       return
     }
+    // identities:[] = existing confirmed user trying to re-register
+    if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setErr('Account already exists. Please sign in.')
+      return
+    }
+    // Normal flow: OTP sent to email
     setMode('otp'); setTimer(60); setOtp('')
-    setOk('Check your email for a 6-digit code. It may take a minute.')
+    setOk('Check your email for a 6-digit code.')
   }
 
   async function verify() {
