@@ -86,9 +86,11 @@ export default function Stock() {
     }
   }
 
-  async function updateCell(table, id, field, value, setter) { try {
-    await supabase.from(table).update({[field]:value}).eq('id',id)
-    setter(prev=>prev.map(r=>r.id===id?{...r,[field]:value}:r))
+  async function updateCell(table, id, field, value, setter) {
+    try {
+      await supabase.from(table).update({[field]:value}).eq('id',id)
+      setter(prev=>prev.map(r=>r.id===id?{...r,[field]:value}:r))
+    } catch(e) { console.error('updateCell error:', e?.message) }
   }
 
   const TABS = [
