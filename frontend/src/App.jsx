@@ -330,7 +330,10 @@ function Auth() {
     const { error:e } = await supabase.auth.signInWithPassword({ email, password:pw })
     setLoading(false)
     if (e) {
-      const msg = e?.message || e?.msg || JSON.stringify(e)
+      const msg = e?.message || e?.msg || e?.error_description || e?.code || (typeof e === 'string' ? e : null) || JSON.stringify(e) || 'Login failed. Please try again.'
+      if (msg === '{}' || msg === 'null' || !msg) {
+        return setErr('Login failed. Please check your email and password.')
+      }
       if (msg.toLowerCase().includes('not confirmed')) {
         // Auto-resend OTP so user can confirm their email
         const { error:re } = await supabase.auth.resend({ type:'signup', email })
@@ -357,7 +360,7 @@ function Auth() {
     const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
     setLoading(false)
     if (e) {
-      const msg = e?.message || e?.msg || JSON.stringify(e)
+      const msg = e?.message || e?.msg || e?.error_description || e?.code || JSON.stringify(e) || 'Signup failed'
       const lower = msg.toLowerCase()
       if (lower.includes('rate limit') || lower.includes('429')) {
         return setErr('Too many signup attempts. Please wait a minute and try again.')
@@ -388,18 +391,18 @@ function Auth() {
     clr(); const token = otp.replace(/\s/g,'')
     if (token.length !== 6) return setErr('Enter the full 6-digit code.')
     setLoading(true)
-    const { error:e } = await supabase.auth.verifyOtp({ email, token, type:'signup' })
+    const { data:vData, error:e } = await supabase.auth.verifyOtp({ email, token, type:'signup' })
     if (e) {
       setLoading(false)
-      const m = e?.message || JSON.stringify(e)
-      if (m.toLowerCase().includes('expired') || m.toLowerCase().includes('otp')) {
-        return setErr('Code expired or incorrect. Click Resend code to get a new one.')
+      const m = e?.message || e?.code || JSON.stringify(e)
+      if (m.toLowerCase().includes('expired') || m.toLowerCase().includes('otp') || m.toLowerCase().includes('invalid')) {
+        return setErr('Code expired or incorrect. Click \'Resend code\' to get a new one.')
       }
       return setErr('Verification failed: ' + m)
     }
-    const { error:loginErr } = await supabase.auth.signInWithPassword({ email, password:pw })
+    // verifyOtp already creates a session — no need to signInWithPassword
+    // Just pick up the session and proceed to onboarding
     setLoading(false)
-    if (loginErr) return setErr('Verified! Now sign in with your password.')
     setMode('onboard'); setStep(1)
   }
 
