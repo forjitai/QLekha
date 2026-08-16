@@ -27,56 +27,60 @@ export default function Dashboard() {
   useEffect(() => { load() }, [])
 
   async function load() {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return setLoading(false)
-    const { data: ud } = await supabase.from('users').select('*,companies(*)').eq('id', user.id).single()
-    if (!ud) return setLoading(false)
-    setProfile(ud)
-    const cid = ud.company_id
-    const now = new Date()
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString()
-    const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
-    const [qr, ir, pr, cr, lr] = await Promise.all([
-      supabase.from('quotes').select('id,status,grand_total,created_at,client_name,quote_number').eq('company_id',cid).order('created_at',{ascending:false}).limit(50),
-      supabase.from('invoices').select('id,status,grand_total,balance_due,created_at,client_name,invoice_number,due_date').eq('company_id',cid),
-      supabase.from('payments').select('amount,payment_date').eq('company_id',cid),
-      supabase.from('clients').select('id,name,total_billed,is_active').eq('company_id',cid),
-      supabase.from('leads').select('id,status').eq('company_id',cid),
-    ])
-
-    const quotes   = qr.data || []
-    const invoices = ir.data || []
-    const payments = pr.data || []
-    const clients  = cr.data || []
-    const leads    = lr.data || []
-
-    const totalRevenue    = invoices.filter(i=>i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
-    const collected       = payments.reduce((s,p)=>s+(p.amount||0),0)
-    const outstanding     = invoices.filter(i=>['pending','partial','overdue'].includes(i.status)).reduce((s,i)=>s+(i.balance_due||0),0)
-    const thisMonthRevenue= invoices.filter(i=>i.created_at>=thisMonthStart&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
-    const lastMonthRevenue= invoices.filter(i=>i.created_at>=lastMonthStart&&i.created_at<lastMonthEnd&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
-    const revTrend        = lastMonthRevenue>0?Math.round(((thisMonthRevenue-lastMonthRevenue)/lastMonthRevenue)*100):0
-    const overdueList     = invoices.filter(i=>i.status==='overdue'||(i.due_date&&new Date(i.due_date)<now&&(i.balance_due||0)>0)).slice(0,5)
-
-    setStats({
-      totalQuotes: quotes.length,
-      draftQuotes: quotes.filter(q=>q.status==='draft').length,
-      sentQuotes:  quotes.filter(q=>q.status==='sent').length,
-      approvedQuotes: quotes.filter(q=>q.status==='approved').length,
-      totalInvoices: invoices.length,
-      pendingInvoices: invoices.filter(i=>i.status==='pending').length,
-      overdueInvoices: invoices.filter(i=>i.status==='overdue').length,
-      totalRevenue, collected, outstanding,
-      thisMonthRevenue, lastMonthRevenue, revTrend,
-      totalClients: clients.length,
-      activeLeads: leads.filter(l=>l.status==='open').length,
-      recentQuotes: quotes.slice(0,6),
-      overdueList,
-    })
-    setLoading(false)
+    try {
+      setLoading(true)
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) return setLoading(false)
+          const { data: ud } = await supabase.from('users').select('*,companies(*)').eq('id', user.id).single()
+          if (!ud) return setLoading(false)
+          setProfile(ud)
+          const cid = ud.company_id
+          const now = new Date()
+          const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+          const lastMonthStart = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString()
+          const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      
+          const [qr, ir, pr, cr, lr] = await Promise.all([
+            supabase.from('quotes').select('id,status,grand_total,created_at,client_name,quote_number').eq('company_id',cid).order('created_at',{ascending:false}).limit(50),
+            supabase.from('invoices').select('id,status,grand_total,balance_due,created_at,client_name,invoice_number,due_date').eq('company_id',cid),
+            supabase.from('payments').select('amount,payment_date').eq('company_id',cid),
+            supabase.from('clients').select('id,name,total_billed,is_active').eq('company_id',cid),
+            supabase.from('leads').select('id,status').eq('company_id',cid),
+          ])
+      
+          const quotes   = qr.data || []
+          const invoices = ir.data || []
+          const payments = pr.data || []
+          const clients  = cr.data || []
+          const leads    = lr.data || []
+      
+          const totalRevenue    = invoices.filter(i=>i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
+          const collected       = payments.reduce((s,p)=>s+(p.amount||0),0)
+          const outstanding     = invoices.filter(i=>['pending','partial','overdue'].includes(i.status)).reduce((s,i)=>s+(i.balance_due||0),0)
+          const thisMonthRevenue= invoices.filter(i=>i.created_at>=thisMonthStart&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
+          const lastMonthRevenue= invoices.filter(i=>i.created_at>=lastMonthStart&&i.created_at<lastMonthEnd&&i.status!=='cancelled').reduce((s,i)=>s+(i.grand_total||0),0)
+          const revTrend        = lastMonthRevenue>0?Math.round(((thisMonthRevenue-lastMonthRevenue)/lastMonthRevenue)*100):0
+          const overdueList     = invoices.filter(i=>i.status==='overdue'||(i.due_date&&new Date(i.due_date)<now&&(i.balance_due||0)>0)).slice(0,5)
+      
+          setStats({
+            totalQuotes: quotes.length,
+            draftQuotes: quotes.filter(q=>q.status==='draft').length,
+            sentQuotes:  quotes.filter(q=>q.status==='sent').length,
+            approvedQuotes: quotes.filter(q=>q.status==='approved').length,
+            totalInvoices: invoices.length,
+            pendingInvoices: invoices.filter(i=>i.status==='pending').length,
+            overdueInvoices: invoices.filter(i=>i.status==='overdue').length,
+            totalRevenue, collected, outstanding,
+            thisMonthRevenue, lastMonthRevenue, revTrend,
+            totalClients: clients.length,
+            activeLeads: leads.filter(l=>l.status==='open').length,
+            recentQuotes: quotes.slice(0,6),
+            overdueList,
+          })
+          setLoading(false)
+    } catch(e) {
+      console.error(e)
+    }
   }
 
   const co = profile?.companies || {}
