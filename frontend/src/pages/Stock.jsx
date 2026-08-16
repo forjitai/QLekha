@@ -64,6 +64,7 @@ export default function Stock() {
 
   async function load() {
     setLoading(true)
+    try {
     const{data:{user}}=await supabase.auth.getUser()
     if(!user)return setLoading(false)
     const{data:ud}=await supabase.from('users').select('company_id,companies(name)').eq('id',user.id).single()
@@ -78,10 +79,14 @@ export default function Stock() {
     setProfiles(pr.data||[])
     setGlass(gr.data||[])
     setAccessories(ar.data||[])
-    setLoading(false)
+      } catch(e) {
+      console.error("Stock load:", e?.message || JSON.stringify(e))
+    } finally {
+      setLoading(false)
+    }
   }
 
-  async function updateCell(table, id, field, value, setter) {
+  async function updateCell(table, id, field, value, setter) { try {
     await supabase.from(table).update({[field]:value}).eq('id',id)
     setter(prev=>prev.map(r=>r.id===id?{...r,[field]:value}:r))
   }
