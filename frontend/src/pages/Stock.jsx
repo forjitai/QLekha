@@ -109,7 +109,7 @@ export default function Stock() {
   ]
   const ACC_FIELDS = [
     {key:'name',label:'Name',required:true,placeholder:'e.g. Door Handle'},
-    {key:'category',label:'Category',type:'select',options:['handle','lock','hinge','roller','seal','mosquito_mesh','other']},
+    {key:'category',label:'Category',type:'select',options:['handle','lock','hinge','roller','seal','mesh','other']},
     {key:'unit',label:'Unit',type:'select',options:['piece','set','meter','kg','sqft']},
     {key:'price',label:'Price (Rs.)',type:'number'},
     {key:'brand',label:'Brand'},
