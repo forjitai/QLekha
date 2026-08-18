@@ -324,32 +324,62 @@ function Auth({ startOnboard = false }) {
   const [ob, setOb] = useState({ company_name:'', owner_name:'', phone:'', city:'', language:'en' })
   const signupUserRef = useRef(null)
 
-  // Handle email confirmation link ONLY when URL contains token params
+  // Handle email confirmation link — runs on every /auth visit
+  // Supabase confirmation links redirect to /auth with token params
   useEffect(() => {
     const hash = window.location.hash
     const params = new URLSearchParams(window.location.search)
-    const isConfirmLink = hash.includes('access_token') || 
-                          hash.includes('error') ||
-                          params.get('token_hash') || 
-                          params.get('type') === 'signup' ||
-                          params.get('type') === 'recovery'
-    if (!isConfirmLink) return  // normal /auth visit — do nothing
-    // This is a confirmation link click — pick up the session Supabase set
+    const hasHash = hash.includes('access_token') || hash.includes('error_description')
+    const hasCode = params.get('code')
+    const hasToken = params.get('token_hash')
+    const isSignup = params.get('type') === 'signup' || params.get('type') === 'recovery'
+
+    if (!hasHash && !hasCode && !hasToken && !isSignup) return
+
     setOk('Confirming your email...')
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        supabase.from('users').select('id').eq('id', session.user.id).single()
-          .then(({ data }) => {
-            if (data) {
-              window.location.href = '/dashboard'
-            } else {
-              setMode('onboard'); setStep(1)
-            }
-          })
-      } else {
-        setErr('Confirmation link expired. Please sign up again.')
+    setMode('link_sent')
+
+    async function handleConfirm() {
+      let session = null
+
+      // PKCE flow: exchange code for session
+      if (hasCode) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(params.get('code'))
+        if (!error && data.session) session = data.session
       }
-    })
+
+      // Implicit flow: token in hash, supabase picks it up automatically
+      if (!session) {
+        const { data } = await supabase.auth.getSession()
+        session = data.session
+      }
+
+      // Try token_hash exchange
+      if (!session && hasToken) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: params.get('token_hash'),
+          type: params.get('type') || 'signup'
+        })
+        if (!error && data.session) session = data.session
+      }
+
+      if (session) {
+        // Clean URL
+        window.history.replaceState({}, document.title, '/auth')
+        // Check if onboarded
+        const { data: userData } = await supabase.from('users').select('id').eq('id', session.user.id).single()
+        if (userData) {
+          window.location.href = '/dashboard'
+        } else {
+          setMode('onboard'); setStep(1)
+        }
+      } else {
+        setErr('Confirmation link expired or already used. Please sign up again.')
+        setMode('signup')
+      }
+    }
+
+    handleConfirm()
   }, [])
 
   useEffect(() => {
