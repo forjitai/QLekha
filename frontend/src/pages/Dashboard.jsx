@@ -87,7 +87,7 @@ export default function Dashboard() {
             totalRevenue, collected, outstanding,
             thisMonthRevenue, lastMonthRevenue, revTrend,
             totalClients: clients.length,
-            activeLeads: leads.filter(l=>l.status==='open').length,
+            activeLeads: leads.filter(l=>l.status!=='won'&&l.status!=='lost').length,
             recentQuotes: quotes.slice(0,6),
             overdueList,
           })
