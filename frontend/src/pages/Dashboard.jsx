@@ -3,6 +3,20 @@ import { supabase } from '../lib/supabase'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
 
+function KPI({ icon, value, label, sub, color }) {
+  return (
+    <div style={{background:C.snow,borderRadius:14,border:'1px solid '+C.glass,padding:'18px 20px'}}>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+        <div style={{width:36,height:36,borderRadius:10,background:(color||C.steel)+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}
+             dangerouslySetInnerHTML={{__html:icon}}/>
+        <span style={{fontSize:11,fontWeight:700,color:C.mist,textTransform:'uppercase',letterSpacing:'0.5px'}}>{label}</span>
+      </div>
+      <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:26,fontWeight:600,color:C.ink,lineHeight:1.1,marginBottom:4}}>{value}</div>
+      {sub && <div style={{fontSize:12,color:C.mist}}>{sub}</div>}
+    </div>
+  )
+}
+
 function QuickAction({ icon, label, href, color }) {
   return (
     <a href={href} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8,padding:'16px 12px',borderRadius:12,border:'1px solid '+C.glass,background:C.snow,textDecoration:'none',transition:'all 0.15s',cursor:'pointer'}}>
