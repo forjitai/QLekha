@@ -126,6 +126,7 @@ export default function Stock() {
   ]
 
   const PROFILE_FIELDS = [
+    {key:'name',label:'Profile Name',required:true,placeholder:'e.g. Jindal 46S'},
     {key:'brand',label:'Brand',required:true,placeholder:'e.g. Jindal'},
     {key:'series',label:'Series',required:true,placeholder:'e.g. 46S'},
     {key:'material_type',label:'Material',required:true,type:'select',options:['aluminium','upvc','mixed']},
