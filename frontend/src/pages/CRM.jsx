@@ -53,6 +53,50 @@ function AddClientModal({ companyId, onClose, onDone }) {
   )
 }
 
+function AddLeadModal({ companyId, onClose, onDone }) {
+  const [form, setForm] = useState({ name:'', phone:'', source:'walkin', status:'new', value_estimate:'' })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+  const up = (k,v) => setForm(p => ({...p,[k]:v}))
+  const IS = {width:'100%',padding:'10px 12px',borderRadius:8,border:'1.5px solid '+C.fog,fontSize:13,
+              color:C.ink,background:C.snow,outline:'none',marginBottom:12,boxSizing:'border-box',fontFamily:'Inter,sans-serif'}
+  async function save() {
+    setErr('')
+    if (!form.name.trim()) return setErr('Lead name is required.')
+    setSaving(true)
+    const { data, error } = await supabase.from('leads').insert({
+      company_id: companyId,
+      name: form.name.trim(),
+      phone: form.phone.trim() || null,
+      source: form.source,
+      status: form.status,
+      value_estimate: form.value_estimate === '' ? null : Number(form.value_estimate),
+    }).select().single()
+    setSaving(false)
+    if (error) return setErr(error?.message || 'Could not save the lead.')
+    onDone(data)
+  }
+  return (
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(15,25,35,0.5)',zIndex:200,
+      display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.snow,borderRadius:16,width:'100%',maxWidth:400,padding:24,boxSizing:'border-box'}}>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:800,color:C.ink,marginBottom:16}}>New lead</div>
+        {err && <div style={{background:'rgba(220,38,38,0.08)',border:'1px solid rgba(220,38,38,0.2)',borderRadius:8,padding:'9px 12px',fontSize:12,color:C.red,marginBottom:12}}>{err}</div>}
+        <input value={form.name} onChange={e=>up('name',e.target.value)} placeholder="Lead name" style={IS}/>
+        <input type="tel" value={form.phone} onChange={e=>up('phone',e.target.value)} placeholder="Phone (optional)" style={IS}/>
+        <select value={form.source} onChange={e=>up('source',e.target.value)} style={IS}>
+          {['walkin','referral','website','instagram','facebook','justdial','other'].map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+        <input type="number" value={form.value_estimate} onChange={e=>up('value_estimate',e.target.value)} placeholder="Estimated value (Rs.)" style={IS}/>
+        <div style={{display:'flex',gap:10,marginTop:4}}>
+          <button onClick={onClose} style={{flex:1,padding:11,borderRadius:8,border:'1.5px solid '+C.fog,background:'transparent',color:C.ink,fontSize:13,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{flex:2,padding:11,borderRadius:8,border:'none',background:C.steel,color:C.snow,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif'}}>{saving?'Saving...':'Add lead'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CRM() {
   const [tab, setTab] = useState('clients')
   const [clients, setClients] = useState([])
