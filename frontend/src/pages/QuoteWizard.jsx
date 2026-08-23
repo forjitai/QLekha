@@ -311,7 +311,7 @@ function Step4({client,items,profile,onBack,onDone}){
         quote_id:q.id,company_id:profile.company_id,
         title:it.title,hardware_name:it.description||'',
         width_mm:it.width_mm,height_mm:it.height_mm,
-        quantity:it.quantity,unit_price:it.unit_price,
+        quantity:it.quantity,
         total_amount:it.total_amount,item_value:it.unit_price
       }))
       await supabase.from('quote_items').insert(qItems)
