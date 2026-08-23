@@ -44,7 +44,7 @@ export default function Dashboard() {
             supabase.from('quotes').select('id,status,grand_total,created_at,client_name,quote_number').eq('company_id',cid).order('created_at',{ascending:false}).limit(50),
             supabase.from('invoices').select('id,status,grand_total,balance_due,created_at,client_name,invoice_number,due_date').eq('company_id',cid),
             supabase.from('payments').select('amount,payment_date').eq('company_id',cid),
-            supabase.from('clients').select('id,name,total_billed,is_active').eq('company_id',cid),
+            supabase.from('clients').select('id,name,total_billed').eq('company_id',cid),
             supabase.from('leads').select('id,status').eq('company_id',cid),
           ])
       
