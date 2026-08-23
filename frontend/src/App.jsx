@@ -472,48 +472,24 @@ function Auth({ startOnboard = false }) {
     setOk('Sent again. Check your inbox.')
   }
 
-  // ── Finish onboarding: create company + user + starter stock ───────────
+  // Finish onboarding — one atomic RPC creates company + owner + starter stock.
+  // Runs SECURITY DEFINER server-side, so it is not blocked by the RLS bootstrap
+  // deadlock (a brand-new user has no users row, so current_company_id() is NULL).
   async function finish() {
     clr(); setLoading(true)
     try {
       const { data:{ session } } = await supabase.auth.getSession()
-      const user = session?.user
-      if (!user) throw new Error('Your session expired. Please sign in again.')
+      if (!session?.user) throw new Error('Your session expired. Please sign in again.')
 
-      const { data:co, error:cE } = await supabase.from('companies').insert({
-        name: ob.company_name, owner_name: ob.owner_name, phone: ob.phone, city: ob.city,
-        plan: 'trial', trial_started_at: new Date().toISOString(),
-        plan_expires_at: new Date(Date.now() + 14*864e5).toISOString(),
-        default_language: ob.language, pdf_design: 'classic_blue',
-      }).select().single()
-      if (cE) throw cE
-
-      const { error:uE } = await supabase.from('users').insert({
-        id: user.id, company_id: co.id, name: ob.owner_name,
-        email: user.email, phone: ob.phone, role: 'owner', language: ob.language,
+      const { data: companyId, error } = await supabase.rpc('bootstrap_company', {
+        p_company_name: ob.company_name,
+        p_owner_name:   ob.owner_name,
+        p_phone:        ob.phone,
+        p_city:         ob.city || null,
+        p_language:     ob.language || 'en',
       })
-      if (uE) throw uE
-
-      // Starter stock — best effort, never blocks entry to the app
-      try {
-        await Promise.all([
-          supabase.from('profile_companies').insert([
-            {company_id:co.id,name:'Jindal 46S',brand:'Jindal',series:'46S',material_type:'aluminium',color:'Silver',weight_per_meter:1.8,price_per_kg:280,is_active:true},
-            {company_id:co.id,name:'Jindal 60S',brand:'Jindal',series:'60S',material_type:'aluminium',color:'Anodized',weight_per_meter:2.1,price_per_kg:280,is_active:true},
-            {company_id:co.id,name:'Fenesta Standard',brand:'Fenesta',series:'Standard',material_type:'upvc',color:'White',weight_per_meter:1.5,price_per_kg:320,is_active:true},
-          ]),
-          supabase.from('glass_types').insert([
-            {company_id:co.id,name:'Clear Float 4mm',thickness_mm:4,price_per_sqft:45,brand:'Saint-Gobain',is_active:true},
-            {company_id:co.id,name:'Toughened 8mm',thickness_mm:8,price_per_sqft:120,brand:'Saint-Gobain',is_active:true},
-            {company_id:co.id,name:'Reflective Bronze 6mm',thickness_mm:6,price_per_sqft:95,brand:'AIS',is_active:true},
-          ]),
-          supabase.from('accessories').insert([
-            {company_id:co.id,name:'Aluminium Handle',type:'handle',category:'handle',unit:'piece',price:180,brand:'Hardwyn',is_active:true},
-            {company_id:co.id,name:'Mosquito Mesh',type:'mesh',category:'mesh',unit:'sqft',price:35,is_active:true},
-            {company_id:co.id,name:'Stainless Hinge',type:'hinge',category:'hinge',unit:'piece',price:120,is_active:true},
-          ]),
-        ])
-      } catch (seedErr) { console.error('Starter stock seed failed:', seedErr) }
+      if (error) throw error
+      if (!companyId) throw new Error('Setup did not complete. Please try again.')
 
       setLoading(false)
       window.location.href = '/dashboard'
