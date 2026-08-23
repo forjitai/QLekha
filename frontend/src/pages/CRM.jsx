@@ -166,7 +166,7 @@ export default function CRM() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:20}}>
         {[
           {i:'&#128100;',v:String(clients.length),l:'Total Clients',c:C.steel},
-          {i:'&#127919;',v:String(leads.filter(l=>l.status==='open').length),l:'Open Leads',c:C.teal},
+          {i:'&#127919;',v:String(leads.filter(l=>l.status!=='won'&&l.status!=='lost').length),l:'Open Leads',c:C.teal},
           {i:'&#127881;',v:String(leads.filter(l=>l.status==='won').length),l:'Won Leads',c:C.green},
           {i:'&#128176;',v:fmt(clients.reduce((s,c)=>s+(c.total_billed||0),0)),l:'Total Billed',c:C.amber},
         ].map(k=>(
@@ -260,7 +260,7 @@ export default function CRM() {
                         <td style={{padding:'12px 14px',fontWeight:600,fontSize:13,color:C.ink}}>{l.name||'Unnamed'}</td>
                         <td style={{padding:'12px 14px',fontSize:12,color:C.ink}}>{l.phone||'—'}</td>
                         <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:600,padding:'2px 8px',borderRadius:6,background:C.glass,color:C.ink,textTransform:'capitalize'}}>{l.source||'other'}</span></td>
-                        <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:100,background:ls.bg,color:ls.c,textTransform:'capitalize'}}>{(l.status||'open').replace('_',' ')}</span></td>
+                        <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:100,background:ls.bg,color:ls.c,textTransform:'capitalize'}}>{(l.status||'new').replace('_',' ')}</span></td>
                         <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,color:C.ink}}>{l.value_estimate?fmt(l.value_estimate):'—'}</td>
                         <td style={{padding:'12px 14px',fontSize:12,color:l.follow_up_date&&new Date(l.follow_up_date)<new Date()?C.red:C.mist}}>
                           {l.follow_up_date?new Date(l.follow_up_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—'}
