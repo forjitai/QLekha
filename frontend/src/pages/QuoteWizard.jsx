@@ -420,6 +420,30 @@ function Step4({client,items,profile,onBack,onDone}){
   )
 }
 
+function StepBar({ step }) {
+  const steps = ['Client','Windows','Pricing','Review']
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:24}}>
+      {steps.map((s,i) => {
+        const n = i + 1
+        const done = n < step, active = n === step
+        return (
+          <div key={s} style={{display:'flex',alignItems:'center',gap:6,flex:i<steps.length-1?1:'0 0 auto'}}>
+            <div style={{display:'flex',alignItems:'center',gap:7}}>
+              <div style={{width:24,height:24,borderRadius:'50%',flexShrink:0,display:'flex',alignItems:'center',
+                justifyContent:'center',fontSize:11,fontWeight:700,fontFamily:'Syne,sans-serif',
+                background: done ? C.teal : active ? C.steel : C.glass,
+                color: (done || active) ? C.snow : C.mist}}>{done ? '\u2713' : n}</div>
+              <span style={{fontSize:12,fontWeight:active?700:500,color:active?C.ink:C.mist,whiteSpace:'nowrap'}}>{s}</span>
+            </div>
+            {i < steps.length - 1 && <div style={{flex:1,height:2,borderRadius:2,background: done ? C.teal : C.glass}}/>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function QuoteWizard(){
   const[step,setStep]=useState(1)
   const[profile,setProfile]=useState(null)
