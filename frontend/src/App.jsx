@@ -55,19 +55,19 @@ const NAV = [
 
 // ─── Splash ──────────────────────────────────────────────────────────────────
 function AuthRedirect({ session }) {
-  const [ready, setReady] = React.useState(false)
-  const [needsOnboard, setNeedsOnboard] = React.useState(false)
-  React.useEffect(() => {
-    if (!session?.user) { window.location.href = '/auth'; return }
-    supabase.from('users').select('id').eq('id', session.user.id).single()
+  const [needsOnboard, setNeedsOnboard] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    if (!session?.user) return
+    supabase.from('users').select('id').eq('id', session.user.id).maybeSingle()
       .then(({ data }) => {
-        if (data) {
-          window.location.href = '/dashboard'
-        } else {
-          setNeedsOnboard(true); setReady(true)
-        }
+        if (cancelled) return
+        if (data) window.location.href = '/dashboard'
+        else setNeedsOnboard(true)
       })
-  }, [])
+      .catch(() => { if (!cancelled) setNeedsOnboard(true) })
+    return () => { cancelled = true }
+  }, [session])
   if (needsOnboard) return <Auth startOnboard={true}/>
   return <Splash/>
 }
@@ -314,331 +314,317 @@ function Auth({ startOnboard = false }) {
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [cpw, setCpw] = useState('')
-  const [otp, setOtp] = useState('')
-  const [timer, setTimer] = useState(0)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
   const [ok, setOk] = useState('')
   const [show, setShow] = useState(false)
   const [step, setStep] = useState(1)
   const [ob, setOb] = useState({ company_name:'', owner_name:'', phone:'', city:'', language:'en' })
-  const signupUserRef = useRef(null)
-
-  // Handle email confirmation link — runs on every /auth visit
-  // Supabase confirmation links redirect to /auth with token params
-  useEffect(() => {
-    const hash = window.location.hash
-    const params = new URLSearchParams(window.location.search)
-    const hasHash = hash.includes('access_token') || hash.includes('error_description')
-    const hasCode = params.get('code')
-    const hasToken = params.get('token_hash')
-    const isSignup = params.get('type') === 'signup' || params.get('type') === 'recovery'
-
-    if (!hasHash && !hasCode && !hasToken && !isSignup) return
-
-    setOk('Confirming your email...')
-    setMode('link_sent')
-
-    async function handleConfirm() {
-      let session = null
-
-      // PKCE flow: exchange code for session
-      if (hasCode) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(params.get('code'))
-        if (!error && data.session) session = data.session
-      }
-
-      // Implicit flow: token in hash, supabase picks it up automatically
-      if (!session) {
-        const { data } = await supabase.auth.getSession()
-        session = data.session
-      }
-
-      // Try token_hash exchange
-      if (!session && hasToken) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: params.get('token_hash'),
-          type: params.get('type') || 'signup'
-        })
-        if (!error && data.session) session = data.session
-      }
-
-      if (session) {
-        // Clean URL
-        window.history.replaceState({}, document.title, '/auth')
-        // Check if onboarded
-        const { data: userData } = await supabase.from('users').select('id').eq('id', session.user.id).single()
-        if (userData) {
-          window.location.href = '/dashboard'
-        } else {
-          setMode('onboard'); setStep(1)
-        }
-      } else {
-        setErr('Confirmation link expired or already used. Please sign up again.')
-        setMode('signup')
-      }
-    }
-
-    handleConfirm()
-  }, [])
-
-  useEffect(() => {
-    if (timer > 0) { const t = setTimeout(() => setTimer(v => v-1), 1000); return () => clearTimeout(t) }
-  }, [timer])
 
   const clr = () => { setErr(''); setOk('') }
   const upd = (k, v) => setOb(p => ({...p, [k]:v}))
+
+  // Turn any Supabase error into a readable message
+  const errMsg = (e, fallback) => {
+    if (!e) return fallback
+    const m = e.message || e.msg || e.error_description || e.error ||
+              (e.status ? 'Server error (' + e.status + ')' : '')
+    if (!m || m === '{}' || m === 'null') return fallback
+    return m
+  }
+
+  // ── Handle email confirmation link arriving back at /auth ──────────────
+  useEffect(() => {
+    const hash   = window.location.hash || ''
+    const params = new URLSearchParams(window.location.search)
+    const code       = params.get('code')
+    const tokenHash  = params.get('token_hash')
+    const linkType   = params.get('type')
+    const hasHashTok = hash.includes('access_token')
+    const hashErr    = hash.includes('error_description') || params.get('error')
+
+    if (!code && !tokenHash && !hasHashTok && !hashErr && !linkType) return
+
+    if (hashErr) {
+      const em = decodeURIComponent((hash.split('error_description=')[1] || params.get('error_description') || 'Link expired').split('&')[0]).replace(/\+/g, ' ')
+      window.history.replaceState({}, document.title, '/auth')
+      setMode('signup')
+      setErr(em + '. Please sign up again.')
+      return
+    }
+
+    setMode('confirming')
+    setOk('')
+
+    ;(async () => {
+      let session = null
+      try {
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+          if (!error) session = data?.session || null
+        }
+        if (!session && tokenHash) {
+          const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: linkType || 'signup' })
+          if (!error) session = data?.session || null
+        }
+        if (!session) {
+          const { data } = await supabase.auth.getSession()
+          session = data?.session || null
+        }
+      } catch (e) { /* fall through to error branch */ }
+
+      window.history.replaceState({}, document.title, '/auth')
+
+      if (!session) {
+        setMode('signup')
+        setErr('That confirmation link has expired or was already used. Please sign up again.')
+        return
+      }
+
+      // Confirmed. Does this user already have a company?
+      const { data: row } = await supabase.from('users').select('id').eq('id', session.user.id).maybeSingle()
+      if (row) { window.location.href = '/dashboard'; return }
+      setEmail(session.user.email || '')
+      setMode('onboard'); setStep(1)
+    })()
+  }, [])
+
+  // ── Sign in ────────────────────────────────────────────────────────────
+  async function login() {
+    clr()
+    if (!email || !pw) return setErr('Enter email and password.')
+    setLoading(true)
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pw })
+    setLoading(false)
+
+    if (error) {
+      const m = errMsg(error, 'Sign in failed. Please try again.').toLowerCase()
+      if (m.includes('not confirmed')) {
+        setLoading(true)
+        const { error: re } = await supabase.auth.resend({ type:'signup', email: email.trim() })
+        setLoading(false)
+        if (re) return setErr(errMsg(re, 'Could not resend the confirmation email.'))
+        setMode('link_sent')
+        setOk('')
+        return
+      }
+      if (m.includes('invalid login') || m.includes('invalid credentials')) return setErr('Wrong email or password.')
+      if (m.includes('rate limit')) return setErr('Too many attempts. Please wait a minute.')
+      return setErr(errMsg(error, 'Sign in failed. Please try again.'))
+    }
+
+    // Signed in — send them to onboarding if they have no company yet
+    const uid = data?.user?.id
+    if (uid) {
+      const { data: row } = await supabase.from('users').select('id').eq('id', uid).maybeSingle()
+      if (!row) { setMode('onboard'); setStep(1); return }
+    }
+    window.location.href = '/dashboard'
+  }
+
+  // ── Create account ─────────────────────────────────────────────────────
+  async function signup() {
+    clr()
+    const mail = email.trim()
+    if (!mail || !mail.includes('@')) return setErr('Enter a valid email address.')
+    if (pw.length < 8) return setErr('Password must be at least 8 characters.')
+    if (pw !== cpw) return setErr('Passwords do not match.')
+
+    setLoading(true)
+    const { data, error } = await supabase.auth.signUp({
+      email: mail,
+      password: pw,
+      options: { emailRedirectTo: window.location.origin + '/auth' },
+    })
+    setLoading(false)
+
+    if (error) {
+      const m = errMsg(error, 'Could not create your account.').toLowerCase()
+      if (m.includes('rate limit') || m.includes('429')) return setErr('Too many attempts. Please wait a minute and try again.')
+      if (m.includes('already') || m.includes('registered')) return setErr('An account with this email already exists. Please sign in.')
+      if (m.includes('server error') || m.includes('500') || m.includes('sending')) {
+        return setErr('We could not send the confirmation email right now. Please try again in a minute.')
+      }
+      return setErr(errMsg(error, 'Could not create your account.'))
+    }
+
+    // Email confirmation is off — signUp returned a live session
+    if (data?.session) { setMode('onboard'); setStep(1); return }
+
+    // Email already registered and confirmed
+    if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return setErr('An account with this email already exists. Please sign in.')
+    }
+
+    setMode('link_sent')
+  }
+
+  // ── Resend confirmation email ──────────────────────────────────────────
+  async function resendLink() {
+    clr(); setLoading(true)
+    const { error } = await supabase.auth.resend({ type:'signup', email: email.trim() })
+    setLoading(false)
+    if (error) {
+      const m = errMsg(error, 'Could not resend.').toLowerCase()
+      if (m.includes('rate limit')) return setErr('Please wait a minute before requesting another email.')
+      return setErr(errMsg(error, 'Could not resend the email.'))
+    }
+    setOk('Sent again. Check your inbox.')
+  }
+
+  // ── Finish onboarding: create company + user + starter stock ───────────
+  async function finish() {
+    clr(); setLoading(true)
+    try {
+      const { data:{ session } } = await supabase.auth.getSession()
+      const user = session?.user
+      if (!user) throw new Error('Your session expired. Please sign in again.')
+
+      const { data:co, error:cE } = await supabase.from('companies').insert({
+        name: ob.company_name, owner_name: ob.owner_name, phone: ob.phone, city: ob.city,
+        plan: 'trial', trial_started_at: new Date().toISOString(),
+        plan_expires_at: new Date(Date.now() + 14*864e5).toISOString(),
+        default_language: ob.language, pdf_design: 'classic_blue',
+      }).select().single()
+      if (cE) throw cE
+
+      const { error:uE } = await supabase.from('users').insert({
+        id: user.id, company_id: co.id, name: ob.owner_name,
+        email: user.email, phone: ob.phone, role: 'owner', language: ob.language,
+      })
+      if (uE) throw uE
+
+      // Starter stock — best effort, never blocks entry to the app
+      try {
+        await Promise.all([
+          supabase.from('profile_companies').insert([
+            {company_id:co.id,name:'Jindal 46S',brand:'Jindal',series:'46S',material_type:'aluminium',color:'Silver',weight_per_meter:1.8,price_per_kg:280,is_active:true},
+            {company_id:co.id,name:'Jindal 60S',brand:'Jindal',series:'60S',material_type:'aluminium',color:'Anodized',weight_per_meter:2.1,price_per_kg:280,is_active:true},
+            {company_id:co.id,name:'Fenesta Standard',brand:'Fenesta',series:'Standard',material_type:'upvc',color:'White',weight_per_meter:1.5,price_per_kg:320,is_active:true},
+          ]),
+          supabase.from('glass_types').insert([
+            {company_id:co.id,name:'Clear Float 4mm',thickness_mm:4,price_per_sqft:45,brand:'Saint-Gobain',is_active:true},
+            {company_id:co.id,name:'Toughened 8mm',thickness_mm:8,price_per_sqft:120,brand:'Saint-Gobain',is_active:true},
+            {company_id:co.id,name:'Reflective Bronze 6mm',thickness_mm:6,price_per_sqft:95,brand:'AIS',is_active:true},
+          ]),
+          supabase.from('accessories').insert([
+            {company_id:co.id,name:'Aluminium Handle',type:'handle',category:'handle',unit:'piece',price:180,brand:'Hardwyn',is_active:true},
+            {company_id:co.id,name:'Mosquito Mesh',type:'mesh',category:'mesh',unit:'sqft',price:35,is_active:true},
+            {company_id:co.id,name:'Stainless Hinge',type:'hinge',category:'hinge',unit:'piece',price:120,is_active:true},
+          ]),
+        ])
+      } catch (seedErr) { console.error('Starter stock seed failed:', seedErr) }
+
+      setLoading(false)
+      window.location.href = '/dashboard'
+    } catch (e) {
+      setLoading(false)
+      setErr(errMsg(e, 'Setup failed. Please try again.'))
+    }
+  }
+
   const LANGS = [
     {c:'en',n:'English'},{c:'hi',n:'\u0939\u093f\u0928\u094d\u0926\u0940'},
     {c:'kn',n:'\u0c95\u0ca8\u0ccd\u0ca8\u0ca1'},{c:'ta',n:'\u0ba4\u0bae\u0bbf\u0bb4\u0bcd'},
     {c:'te',n:'\u0c24\u0c46\u0c32\u0c41\u0c17\u0c41'},{c:'ml',n:'\u0d2e\u0d32\u0d2f\u0d3e\u0d33\u0d02'},
     {c:'gu',n:'\u0a97\u0ac1\u0a9c\u0ab0\u0abe\u0aa4\u0ac0'},{c:'mr',n:'\u092e\u0930\u093e\u0920\u0940'},
   ]
+  const isMobile = window.innerWidth < 768
   const IS = {width:'100%',padding:'11px 14px',borderRadius:10,border:'1.5px solid '+C.fog,fontSize:14,fontFamily:'Inter,sans-serif',color:C.ink,background:C.snow,outline:'none',marginBottom:16,boxSizing:'border-box'}
   const BS = {width:'100%',padding:'13px',borderRadius:10,border:'none',background:C.steel,color:C.snow,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:4}
   const LS = {fontSize:11,fontWeight:700,color:C.ink,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:5}
-  const Lnk = ({onClick:o, children:c}) => <button onClick={o} style={{background:'none',border:'none',cursor:'pointer',color:C.steel,fontWeight:600,fontSize:13,fontFamily:'Inter,sans-serif'}}>{c}</button>
+  const Lnk = ({onClick:o, children:c}) => <button onClick={o} style={{background:'none',border:'none',cursor:'pointer',color:C.steel,fontWeight:600,fontSize:13,fontFamily:'Inter,sans-serif',padding:0}}>{c}</button>
   const Btn = ({ghost, style:s, ...p}) => <button {...p} style={{...BS,...(ghost?{background:'transparent',border:'1.5px solid '+C.fog,color:C.ink,marginTop:8}:{}),...(s||{})}}/>
 
-  async function login() {
-    clr(); if (!email || !pw) return setErr('Enter email and password.')
-    setLoading(true)
-    const { error:e } = await supabase.auth.signInWithPassword({ email, password:pw })
-    setLoading(false)
-    if (e) {
-      const msg = e?.message || e?.msg || e?.error_description || e?.code || (typeof e === 'string' ? e : null) || JSON.stringify(e) || 'Login failed. Please try again.'
-      if (msg === '{}' || msg === 'null' || !msg) {
-        return setErr('Login failed. Please check your email and password.')
-      }
-      if (msg.toLowerCase().includes('not confirmed')) {
-        // Auto-resend OTP so user can confirm their email
-        const { error:re } = await supabase.auth.resend({ type:'signup', email })
-        if (!re) {
-          setMode('otp'); setTimer(60); setOtp('')
-          setOk('A 6-digit code was sent to ' + email + '. Enter it to confirm your account.')
-        } else {
-          setErr('Email not yet confirmed. Check your inbox for the original OTP, or try signing up again.')
-        }
-      } else if (msg.toLowerCase().includes('invalid login') || msg.toLowerCase().includes('invalid credentials')) {
-        setErr('Wrong email or password.')
-      } else {
-        setErr(msg)
-      }
-    } else {
-      window.location.href = '/dashboard'
-    }
-  }
-
-  async function signup() {
-    clr(); if (!email || pw.length < 8) return setErr('Email required, min 8 char password.')
-    if (pw !== cpw) return setErr('Passwords do not match.')
-    setLoading(true)
-    const { data, error:e } = await supabase.auth.signUp({ email, password:pw })
-    setLoading(false)
-    if (e) {
-      // Extract error message from all possible Supabase error shapes
-      const msg = e?.message || e?.msg || e?.error_description || e?.code ||
-                  (e?.status ? 'Server error (' + e.status + '). Please try again.' : '') ||
-                  (typeof e === 'string' ? e : 'Signup failed. Please try again.')
-      const lower = msg.toLowerCase()
-      if (lower.includes('rate limit') || lower.includes('429')) {
-        return setErr('Too many attempts. Please wait a minute.')
-      }
-      if (lower.includes('already') || lower.includes('registered')) {
-        return setErr('Account already exists. Please sign in.')
-      }
-      if (lower.includes('unable to validate') || lower.includes('500') || msg === '{}' || msg === 'null') {
-        return setErr('Could not send OTP email. Please try again or contact support.')
-      }
-      return setErr(msg || 'Signup failed. Please try again.')
-    }
-    // If Supabase auto-confirmed (email confirm disabled) - go straight to onboarding
-    if (data?.session) {
-      setMode('onboard'); setStep(1)
-      return
-    }
-    // identities:[] = existing confirmed user trying to re-register
-    if (data?.user && data.user.identities && data.user.identities.length === 0) {
-      setErr('Account already exists. Please sign in.')
-      return
-    }
-    // Email confirmation link sent — tell user to click it
-    setMode('link_sent')
-    setOk('Check your email and click the confirmation link to complete signup.')
-  }
-
-  async function verify() {
-    clr(); const token = otp.replace(/\s/g,'')
-    if (token.length !== 6) return setErr('Enter the full 6-digit code.')
-    setLoading(true)
-    const { data:vData, error:e } = await supabase.auth.verifyOtp({ email, token, type:'signup' })
-    if (e) {
-      setLoading(false)
-      const m = e?.message || e?.code || JSON.stringify(e)
-      if (m.toLowerCase().includes('expired') || m.toLowerCase().includes('otp') || m.toLowerCase().includes('invalid')) {
-        return setErr('Code expired or incorrect. Click \'Resend code\' to get a new one.')
-      }
-      return setErr('Verification failed: ' + m)
-    }
-    // verifyOtp already creates a session — no need to signInWithPassword
-    // Just pick up the session and proceed to onboarding
-    setLoading(false)
-    setMode('onboard'); setStep(1)
-  }
-
-  async function finish() {
-    clr(); setLoading(true)
-    try {
-      const { data:{ session } } = await supabase.auth.getSession()
-      const user = session?.user
-      if (!user) throw new Error('Session expired. Please sign in again.')
-      const { data:co, error:cE } = await supabase.from('companies').insert({
-        name:ob.company_name, owner_name:ob.owner_name, phone:ob.phone, city:ob.city,
-        plan:'trial', trial_started_at:new Date().toISOString(),
-        plan_expires_at:new Date(Date.now()+14*864e5).toISOString(),
-        default_language:ob.language, pdf_design:'classic_blue',
-      }).select().single()
-      if (cE) throw cE
-      const { error:uE } = await supabase.from('users').insert({
-        id:user.id, company_id:co.id, name:ob.owner_name,
-        email:user.email, phone:ob.phone, role:'owner', language:ob.language,
-      })
-      if (uE) throw uE
-      // Seed starter stock for new company
-      await Promise.all([
-        supabase.from('profile_companies').insert([
-          {company_id:co.id,brand:'Jindal',series:'46S',material_type:'aluminium',color:'Silver',weight_per_meter:1.8,price_per_kg:280},
-          {company_id:co.id,brand:'Jindal',series:'60S',material_type:'aluminium',color:'Anodized',weight_per_meter:2.1,price_per_kg:280},
-          {company_id:co.id,brand:'Fenesta',series:'Standard',material_type:'upvc',color:'White',weight_per_meter:1.5,price_per_kg:320},
-        ]),
-        supabase.from('glass_types').insert([
-          {company_id:co.id,name:'Clear Float 4mm',thickness_mm:4,price_per_sqft:45,brand:'Saint-Gobain'},
-          {company_id:co.id,name:'Toughened 8mm',thickness_mm:8,price_per_sqft:120,brand:'Saint-Gobain'},
-          {company_id:co.id,name:'Reflective Bronze 6mm',thickness_mm:6,price_per_sqft:95,brand:'AIS'},
-        ]),
-        supabase.from('accessories').insert([
-          {company_id:co.id,name:'Aluminium Handle',category:'handle',unit:'piece',price:180,brand:'Hardwyn'},
-          {company_id:co.id,name:'Mosquito Mesh',category:'mosquito_mesh',unit:'sqft',price:35},
-          {company_id:co.id,name:'Stainless Hinge',category:'hinge',unit:'piece',price:120},
-        ])
-      ])
-      setLoading(false)
-      window.location.href = '/dashboard'
-    } catch(e) { setLoading(false); setErr('Setup failed: '+(e.message||e.msg||JSON.stringify(e))) }
-  }
-
-  const isMobile=window.innerWidth<768
   const pageS = {minHeight:'100vh',background:C.ink,display:'flex',flexDirection:isMobile?'column':'row',position:'relative',overflow:'hidden',fontFamily:'Inter,sans-serif'}
-  const gridS = {position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(26,111,232,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(26,111,232,0.05) 1px,transparent 1px)',backgroundSize:'40px 40px',pointerEvents:'none'}
+  const gridS = {position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(27,79,216,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(27,79,216,0.05) 1px,transparent 1px)',backgroundSize:'40px 40px',pointerEvents:'none'}
   const leftS = {display:isMobile?'none':'flex',flex:1,flexDirection:'column',justifyContent:'center',padding:'60px 80px',position:'relative',zIndex:1}
   const rightS = {width:isMobile?'100%':460,minHeight:isMobile?'100vh':'auto',background:C.snow,display:'flex',flexDirection:'column',justifyContent:'center',padding:isMobile?'32px 20px 24px':'56px 48px',position:'relative',zIndex:1,overflowY:'auto',boxSizing:'border-box'}
-  const errS = {background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:C.red,marginBottom:12}
-  const okS  = {background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:8,padding:'10px 14px',fontSize:13,color:C.green,marginBottom:12}
+  const errS = {background:'rgba(220,38,38,0.08)',border:'1px solid rgba(220,38,38,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:C.red,marginBottom:12,lineHeight:1.5}
+  const okS  = {background:'rgba(22,163,74,0.08)',border:'1px solid rgba(22,163,74,0.2)',borderRadius:8,padding:'10px 14px',fontSize:13,color:C.green,marginBottom:12,lineHeight:1.5}
+
+  const heading = mode==='login' ? <>Welcome<br/>back to<br/><span style={{color:C.blueLt}}>QLekha</span></>
+    : mode==='onboard' ? <>Almost<br/>ready,<br/><span style={{color:C.blueLt}}>let&apos;s go</span></>
+    : <>Start free<br/>on<br/><span style={{color:C.blueLt}}>QLekha</span></>
 
   return (
     <div style={pageS}>
       <div style={gridS}/>
       <div style={leftS}>
         <div style={{fontFamily:'Syne,sans-serif',fontSize:28,fontWeight:800,color:'#fff',marginBottom:40}}>Q<span style={{color:C.blueLt}}>Lekha</span></div>
-        <h1 style={{fontFamily:'Syne,sans-serif',fontSize:'clamp(32px,4vw,48px)',fontWeight:800,color:'#fff',lineHeight:1.1,letterSpacing:'-1.5px',marginBottom:16}}>
-          {mode==='login' ? <>Welcome<br/>back to<br/><span style={{color:C.blueLt}}>QLekha</span></>
-          : mode==='onboard' ? <>Almost<br/>ready,<br/><span style={{color:C.blueLt}}>let&apos;s go</span></>
-          : <>Start free<br/>on<br/><span style={{color:C.blueLt}}>QLekha</span></>}
-        </h1>
+        <h1 style={{fontFamily:'Syne,sans-serif',fontSize:'clamp(32px,4vw,48px)',fontWeight:800,color:'#fff',lineHeight:1.1,letterSpacing:'-1.5px',marginBottom:16}}>{heading}</h1>
         <p style={{fontSize:15,color:'rgba(255,255,255,0.5)',lineHeight:1.7,maxWidth:380}}>
           {mode==='login' ? 'Your window business, fully organised.' : '14-day free trial. No credit card needed.'}
         </p>
       </div>
+
       <div style={rightS}>
-        {isMobile&&<div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.ink,marginBottom:24,textAlign:'center'}}>Q<span style={{color:C.steel}}>Lekha</span></div>}
+        {isMobile && <div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.ink,marginBottom:24,textAlign:'center'}}>Q<span style={{color:C.steel}}>Lekha</span></div>}
         {err && <div style={errS}>{err}</div>}
         {ok  && <div style={okS}>{ok}</div>}
+
+        {mode==='confirming' && <div style={{textAlign:'center',padding:'40px 0'}}>
+          <div style={{fontSize:32,marginBottom:16}}>&#9203;</div>
+          <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:C.ink,marginBottom:6}}>Confirming your email</div>
+          <div style={{fontSize:13,color:C.mist}}>One moment...</div>
+        </div>}
 
         {mode==='login' && <>
           <div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.ink,marginBottom:6}}>Sign in</div>
           <div style={{fontSize:13,color:C.mist,marginBottom:20}}>Enter your email and password.</div>
           <label style={LS}>Email</label>
-          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" style={IS}/>
+          <input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" style={IS}/>
           <label style={LS}>Password</label>
           <div style={{position:'relative'}}>
-            <input type={show?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} placeholder="Your password" style={{...IS,paddingRight:44}}/>
+            <input type={show?'text':'password'} autoComplete="current-password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} placeholder="Your password" style={{...IS,paddingRight:44}}/>
             <button onClick={()=>setShow(v=>!v)} style={{position:'absolute',right:12,top:14,background:'none',border:'none',cursor:'pointer',color:C.mist,fontSize:16,padding:0}}>{show?'\ud83d\ude48':'\ud83d\udc41'}</button>
           </div>
           <div style={{textAlign:'right',marginBottom:14}}><Lnk onClick={()=>{setMode('forgot');clr()}}>Forgot password?</Lnk></div>
-          <Btn onClick={login} disabled={loading}>{loading?'\u23f3 Signing in...':'Sign in'}</Btn>
+          <Btn onClick={login} disabled={loading}>{loading?'Signing in...':'Sign in'}</Btn>
           <div style={{textAlign:'center',marginTop:14,fontSize:13,color:C.mist}}>No account? <Lnk onClick={()=>{setMode('signup');clr()}}>Create one free</Lnk></div>
         </>}
 
         {mode==='signup' && <>
           <div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.ink,marginBottom:6}}>Create account</div>
           <div style={{fontSize:13,color:C.mist,marginBottom:20}}>Free 14-day trial. No credit card needed.</div>
-          <label style={LS}>Work Email *</label>
-          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" style={IS}/>
-          <label style={LS}>Password *</label>
+          <label style={LS}>Work Email</label>
+          <input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" style={IS}/>
+          <label style={LS}>Password</label>
           <div style={{position:'relative'}}>
-            <input type={show?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} placeholder="At least 8 characters" style={{...IS,paddingRight:44}}/>
+            <input type={show?'text':'password'} autoComplete="new-password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="At least 8 characters" style={{...IS,paddingRight:44}}/>
             <button onClick={()=>setShow(v=>!v)} style={{position:'absolute',right:12,top:14,background:'none',border:'none',cursor:'pointer',color:C.mist,fontSize:16,padding:0}}>{show?'\ud83d\ude48':'\ud83d\udc41'}</button>
           </div>
-          <label style={LS}>Confirm Password *</label>
-          <input type="password" value={cpw} onChange={e=>setCpw(e.target.value)} placeholder="Same again" style={IS}/>
-          <Btn onClick={signup} disabled={loading}>{loading?'\u23f3 Creating...':'Create account'}</Btn>
+          <label style={LS}>Confirm Password</label>
+          <input type="password" autoComplete="new-password" value={cpw} onChange={e=>setCpw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&signup()} placeholder="Same again" style={IS}/>
+          <Btn onClick={signup} disabled={loading}>{loading?'Creating...':'Create account'}</Btn>
           <div style={{textAlign:'center',marginTop:14,fontSize:13,color:C.mist}}>Already have one? <Lnk onClick={()=>{setMode('login');clr()}}>Sign in</Lnk></div>
         </>}
 
-        {mode==='link_sent' && <div style={{textAlign:'center',padding:'20px 0'}}>
-          <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(27,79,216,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,margin:'0 auto 16px'}}>&#128231;</div>
+        {mode==='link_sent' && <div style={{textAlign:'center',padding:'12px 0'}}>
+          <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(27,79,216,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>&#128231;</div>
           <div style={{fontFamily:'Syne,sans-serif',fontSize:22,fontWeight:800,color:C.ink,marginBottom:8}}>Check your email</div>
-          <div style={{fontSize:14,color:C.mist,marginBottom:4}}>We sent a confirmation link to</div>
-          <div style={{fontSize:14,fontWeight:600,color:C.ink,marginBottom:24}}>{email}</div>
-          <div style={{fontSize:13,color:C.mist,lineHeight:1.7,marginBottom:24}}>Click <strong>Confirm email address</strong> in the email.<br/>You will be signed in automatically.</div>
-          <div style={{fontSize:12,color:C.mist}}>Wrong email? <Lnk onClick={()=>{setMode('signup');clr()}}>Go back</Lnk></div>
-        </div>}
-
-        {mode==='otp' && <div style={{textAlign:'center'}}>
-          <div style={{width:64,height:64,borderRadius:'50%',background:'rgba(26,111,232,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 16px'}}>&#128231;</div>
-          <div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.ink,marginBottom:6}}>Enter the code</div>
-          <div style={{fontSize:13,color:C.mist,marginBottom:20}}>Sent to <strong style={{color:C.ink}}>{email}</strong></div>
-          <div style={{display:'flex',gap:10,justifyContent:'center',margin:'20px 0'}}>
-            {Array.from({length:6},(_,i)=>(
-              <input key={i} type="text" inputMode="numeric" maxLength={1}
-                value={otp[i]||''}
-                onChange={e=>{const v=e.target.value.replace(/\D/g,'').slice(-1);const arr=(otp+'      ').slice(0,6).split('');arr[i]=v;setOtp(arr.join('').trimEnd());if(v&&i<5)e.target.nextElementSibling?.focus()}}
-                onKeyDown={e=>{if(e.key==='Backspace'&&!otp[i]&&i>0)e.target.previousElementSibling?.focus()}}
-                style={{width:48,height:56,textAlign:'center',fontSize:22,fontFamily:'JetBrains Mono,monospace',fontWeight:500,borderRadius:10,border:'2px solid '+(otp[i]?C.steel:C.fog),color:C.ink,outline:'none'}}
-              />
-            ))}
+          <div style={{fontSize:14,color:C.mist,marginBottom:2}}>We sent a confirmation link to</div>
+          <div style={{fontSize:14,fontWeight:700,color:C.ink,marginBottom:20,wordBreak:'break-all'}}>{email}</div>
+          <div style={{fontSize:13,color:C.mist,lineHeight:1.7,marginBottom:20}}>
+            Open it and tap <strong style={{color:C.ink}}>Confirm email address</strong>.<br/>You will be signed in automatically.
           </div>
-          <Btn onClick={verify} disabled={loading}>{loading?'\u23f3 Verifying...':'Verify'}</Btn>
-          <div style={{marginTop:14,fontSize:13,color:C.mist}}>
-            <button onClick={async()=>{
-              if(timer>0)return
-              clr(); setLoading(true)
-              const{error:re}=await supabase.auth.resend({type:'signup',email})
-              setLoading(false)
-              if(re){
-                const m=re?.message||re?.msg||JSON.stringify(re)
-                if(m.toLowerCase().includes('rate limit')||m.toLowerCase().includes('429')){
-                  setErr('Too many attempts. Please wait 60 seconds before requesting another code.')
-                }else{
-                  setErr('Could not resend: '+m)
-                }
-              }else{
-                setTimer(60); setOk('New code sent to '+email+'. Check your inbox.')
-              }
-            }} style={{background:'none',border:'none',cursor:timer>0?'default':'pointer',color:timer>0?C.mist:C.steel,fontWeight:600,fontSize:13}}>
-              {timer>0?'Resend in '+timer+'s':'Resend code'}
-            </button>
-          </div>
+          <Btn ghost onClick={resendLink} disabled={loading} style={{marginTop:0,marginBottom:12}}>{loading?'Sending...':'Resend email'}</Btn>
+          <div style={{fontSize:12,color:C.mist}}>Wrong address? <Lnk onClick={()=>{setMode('signup');clr()}}>Go back</Lnk></div>
         </div>}
 
         {mode==='forgot' && <>
           <div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:800,color:C.ink,marginBottom:6}}>Reset password</div>
-          <div style={{fontSize:13,color:C.mist,marginBottom:20}}>Enter your email to get a reset link.</div>
+          <div style={{fontSize:13,color:C.mist,marginBottom:20}}>We will email you a reset link.</div>
           <label style={LS}>Email</label>
           <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@company.com" style={IS}/>
-          <Btn onClick={async()=>{clr();if(!email)return setErr('Enter your email.');setLoading(true);const{error:e}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/auth?reset=1'});setLoading(false);if(e)setErr(e?.message||e?.msg||JSON.stringify(e));else setOk('Reset link sent to '+email)}} disabled={loading}>
-            {loading?'\u23f3 Sending...':'Send reset link'}
-          </Btn>
+          <Btn disabled={loading} onClick={async()=>{
+            clr(); if(!email) return setErr('Enter your email.')
+            setLoading(true)
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin + '/auth?type=recovery' })
+            setLoading(false)
+            if (error) return setErr(errMsg(error, 'Could not send the reset link.'))
+            setOk('Reset link sent to ' + email)
+          }}>{loading?'Sending...':'Send reset link'}</Btn>
           <div style={{textAlign:'center',marginTop:14}}><Lnk onClick={()=>{setMode('login');clr()}}>Back to sign in</Lnk></div>
         </>}
 
@@ -650,32 +636,30 @@ function Auth({ startOnboard = false }) {
           {step===1 && <>
             <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:C.ink,marginBottom:4}}>Your business</div>
             <div style={{fontSize:13,color:C.mist,marginBottom:20}}>Appears on quotes and invoices.</div>
-            <label style={LS}>Business Name *</label><input value={ob.company_name} onChange={e=>upd('company_name',e.target.value)} placeholder="Kumar Aluminium Works" style={IS}/>
-            <label style={LS}>Your Name *</label><input value={ob.owner_name} onChange={e=>upd('owner_name',e.target.value)} placeholder="Rajesh Kumar" style={IS}/>
-            <label style={LS}>Phone *</label><input type="tel" value={ob.phone} onChange={e=>upd('phone',e.target.value)} placeholder="+91 98765 43210" style={IS}/>
+            <label style={LS}>Business Name</label><input value={ob.company_name} onChange={e=>upd('company_name',e.target.value)} placeholder="Kumar Aluminium Works" style={IS}/>
+            <label style={LS}>Your Name</label><input value={ob.owner_name} onChange={e=>upd('owner_name',e.target.value)} placeholder="Rajesh Kumar" style={IS}/>
+            <label style={LS}>Phone</label><input type="tel" value={ob.phone} onChange={e=>upd('phone',e.target.value)} placeholder="+91 98765 43210" style={IS}/>
             <label style={LS}>City</label><input value={ob.city} onChange={e=>upd('city',e.target.value)} placeholder="Bengaluru" style={IS}/>
-            <Btn onClick={()=>ob.company_name&&ob.owner_name&&ob.phone?setStep(2):setErr('Fill required fields.')}>Continue</Btn>
+            <Btn onClick={()=>{clr(); if(ob.company_name&&ob.owner_name&&ob.phone) setStep(2); else setErr('Business name, your name and phone are required.')}}>Continue</Btn>
           </>}
           {step===2 && <>
             <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:C.ink,marginBottom:4}}>Your language</div>
-            <div style={{fontSize:13,color:C.mist,marginBottom:16}}>QLekha works in 14 Indian languages.</div>
+            <div style={{fontSize:13,color:C.mist,marginBottom:16}}>You can change this later in Settings.</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:20}}>
-              {LANGS.map(l=><div key={l.c} onClick={()=>upd('language',l.c)} style={{padding:'10px',borderRadius:10,border:'2px solid '+(ob.language===l.c?C.steel:C.glass),background:ob.language===l.c?'rgba(26,111,232,0.05)':C.snow,cursor:'pointer',textAlign:'center',fontSize:14,fontWeight:600,color:ob.language===l.c?C.steel:C.ink}}>{l.n}</div>)}
+              {LANGS.map(l=><div key={l.c} onClick={()=>upd('language',l.c)} style={{padding:'10px',borderRadius:10,border:'2px solid '+(ob.language===l.c?C.steel:C.glass),background:ob.language===l.c?'rgba(27,79,216,0.05)':C.snow,cursor:'pointer',textAlign:'center',fontSize:14,fontWeight:600,color:ob.language===l.c?C.steel:C.ink}}>{l.n}</div>)}
             </div>
             <Btn onClick={()=>setStep(3)}>Continue</Btn>
             <Btn ghost onClick={()=>setStep(1)}>Back</Btn>
           </>}
           {step===3 && <>
-            <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:C.ink,marginBottom:4}}>You are all set!</div>
-            <div style={{fontSize:13,color:C.mist,marginBottom:20}}>14-day free trial starts now.</div>
-            {[['&#127760;',ob.language.toUpperCase()],['&#127970;',ob.company_name]].map(([ic,tx])=>(
+            <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:C.ink,marginBottom:4}}>You are all set</div>
+            <div style={{fontSize:13,color:C.mist,marginBottom:20}}>Your 14-day free trial starts now.</div>
+            {[['&#127970;',ob.company_name],['&#128100;',ob.owner_name],['&#127760;',ob.language.toUpperCase()]].map(([ic,tx])=>(
               <div key={tx} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderRadius:10,background:C.chalk,marginBottom:8,fontSize:13}}>
                 <span style={{fontSize:18}} dangerouslySetInnerHTML={{__html:ic}}/><span style={{color:C.ink,fontWeight:500}}>{tx}</span>
               </div>
             ))}
-            <Btn style={{background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',marginTop:8}} onClick={finish} disabled={loading}>
-              {loading?'\u23f3 Setting up...':'\ud83d\ude80 Open Dashboard'}
-            </Btn>
+            <Btn style={{marginTop:8}} onClick={finish} disabled={loading}>{loading?'Setting up...':'Open Dashboard'}</Btn>
             <Btn ghost onClick={()=>setStep(2)}>Back</Btn>
           </>}
         </>}
