@@ -10,7 +10,7 @@ function AddClientModal({ companyId, onClose, onDone }) {
   const upd = (k,v) => setForm(p=>({...p,[k]:v}))
   const inp = {width:'100%',padding:'9px 12px',borderRadius:8,border:'1.5px solid '+C.fog,fontSize:13,fontFamily:'Inter,sans-serif',color:C.ink,outline:'none',boxSizing:'border-box',marginBottom:12}
   const lb = {fontSize:11,fontWeight:700,color:C.mist,textTransform:'uppercase',letterSpacing:'0.5px',display:'block',marginBottom:4}
-  const TAGS = ['individual','contractor','builder','dealer','architect','other']
+  const TAGS = ['individual','contractor','builder','dealer','architect','corporate']
 
   async function submit() {
     if (!form.name.trim()) return setErr('Client name is required.')
@@ -144,12 +144,12 @@ export default function CRM() {
     other:       {bg:C.glass,c:C.mist},
   }
   const LEAD_STATUS = {
-    open:       {bg:'rgba(26,111,232,0.1)',c:C.steel},
+    new:         {bg:'rgba(27,79,216,0.1)',c:C.steel},
     contacted:  {bg:'rgba(14,165,160,0.1)',c:C.teal},
     quoted:     {bg:'rgba(139,92,246,0.1)',c:C.purp},
     won:        {bg:'rgba(34,197,94,0.1)',c:C.green},
     lost:       {bg:'rgba(239,68,68,0.08)',c:C.red},
-    on_hold:    {bg:'rgba(255,180,0,0.1)',c:C.amber},
+    negotiating: {bg:'rgba(217,119,6,0.1)',c:C.amber},
   }
 
   return (
@@ -266,7 +266,7 @@ export default function CRM() {
                           {l.follow_up_date?new Date(l.follow_up_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—'}
                         </td>
                         <td style={{padding:'12px 14px'}}>
-                          <select value={l.status||'open'} onChange={async e=>{await supabase.from('leads').update({status:e.target.value}).eq('id',l.id);setLeads(prev=>prev.map(x=>x.id===l.id?{...x,status:e.target.value}:x))}} onClick={e=>e.stopPropagation()} style={{padding:'4px 8px',borderRadius:6,border:'1px solid '+C.fog,fontSize:11,color:C.ink,cursor:'pointer',outline:'none'}}>
+                          <select value={l.status||'new'} onChange={async e=>{await supabase.from('leads').update({status:e.target.value}).eq('id',l.id);setLeads(prev=>prev.map(x=>x.id===l.id?{...x,status:e.target.value}:x))}} onClick={e=>e.stopPropagation()} style={{padding:'4px 8px',borderRadius:6,border:'1px solid '+C.fog,fontSize:11,color:C.ink,cursor:'pointer',outline:'none'}}>
                             {Object.keys(LEAD_STATUS).map(s=><option key={s} value={s}>{s.replace('_',' ')}</option>)}
                           </select>
                         </td>
