@@ -51,6 +51,32 @@ function AddRowModal({ tableName, companyId, fields, onClose, onDone }) {
   )
 }
 
+function InlineEdit({ value, onSave, type = 'text', prefix = '' }) {
+  const [editing, setEditing] = useState(false)
+  const [val, setVal] = useState(value ?? '')
+  useEffect(() => { setVal(value ?? '') }, [value])
+  function commit() {
+    setEditing(false)
+    const next = type === 'number' ? (val === '' ? null : Number(val)) : val
+    if (next !== value) onSave(next)
+  }
+  if (editing) {
+    return (
+      <input autoFocus type={type} value={val ?? ''}
+        onChange={e => setVal(e.target.value)} onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setVal(value ?? ''); setEditing(false) } }}
+        style={{width:'100%',maxWidth:130,padding:'4px 8px',borderRadius:6,border:'1.5px solid '+C.steel,
+                fontSize:13,fontFamily:type==='number'?'JetBrains Mono,monospace':'Inter,sans-serif',
+                color:C.ink,background:C.snow,outline:'none',boxSizing:'border-box'}}/>
+    )
+  }
+  const shown = (value === null || value === undefined || value === '') ? '-' : prefix + value
+  return (
+    <span onClick={() => setEditing(true)} title="Click to edit"
+      style={{cursor:'pointer',borderBottom:'1px dashed '+C.fog,paddingBottom:1,display:'inline-block',minWidth:28}}>{shown}</span>
+  )
+}
+
 export default function Stock() {
   const [tab, setTab] = useState('profiles')
   const [profiles, setProfiles] = useState([])
@@ -111,8 +137,8 @@ export default function Stock() {
     {key:'name',label:'Glass Type',required:true,placeholder:'e.g. Clear Float 4mm'},
     {key:'thickness_mm',label:'Thickness (mm)',type:'number',placeholder:'4'},
     {key:'price_per_sqft',label:'Price/sqft (Rs.)',type:'number'},
-    {key:'price_per_sqm',label:'Price/sqm (Rs.)',type:'number'},
-    {key:'brand',label:'Brand',placeholder:'Saint Gobain...'},
+    {key:'glass_type',label:'Type',placeholder:'clear / toughened / laminated'},
+    {key:'hsn_code',label:'HSN Code',placeholder:'7005'},
   ]
   const ACC_FIELDS = [
     {key:'name',label:'Name',required:true,placeholder:'e.g. Door Handle'},
@@ -187,14 +213,14 @@ export default function Stock() {
           ):(
             <div style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
-                <thead><tr style={{background:C.chalk}}>{['Name','Thickness','Price/sqft','Price/sqm','Brand',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
+                <thead><tr style={{background:C.chalk}}>{['Name','Thickness','Price/sqft','Type','HSN',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
                 <tbody>{glass.map((g,i)=>(
                   <tr key={g.id} style={{borderBottom:'1px solid '+C.chalk}}>
                     <td style={{padding:'12px 14px',fontWeight:600,fontSize:13,color:C.ink}}><InlineEdit value={g.name} onSave={v=>updateCell('glass_types',g.id,'name',v,setGlass)}/></td>
                     <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12}}><InlineEdit value={g.thickness_mm} type="number" onSave={v=>updateCell('glass_types',g.id,'thickness_mm',v,setGlass)}/> mm</td>
                     <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12}}><InlineEdit value={g.price_per_sqft} type="number" prefix="Rs." onSave={v=>updateCell('glass_types',g.id,'price_per_sqft',v,setGlass)}/></td>
-                    <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12}}><InlineEdit value={g.price_per_sqm} type="number" prefix="Rs." onSave={v=>updateCell('glass_types',g.id,'price_per_sqm',v,setGlass)}/></td>
-                    <td style={{padding:'12px 14px',fontSize:12,color:C.ink}}><InlineEdit value={g.brand} onSave={v=>updateCell('glass_types',g.id,'brand',v,setGlass)}/></td>
+                    <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12}}><InlineEdit value={g.glass_type} onSave={v=>updateCell('glass_types',g.id,'glass_type',v,setGlass)}/></td>
+                    <td style={{padding:'12px 14px',fontSize:12,color:C.ink}}><InlineEdit value={g.hsn_code} onSave={v=>updateCell('glass_types',g.id,'hsn_code',v,setGlass)}/></td>
                     <td style={{padding:'12px 14px'}}><button onClick={async()=>{if(confirm('Delete?')){await supabase.from('glass_types').delete().eq('id',g.id);setGlass(prev=>prev.filter(x=>x.id!==g.id))}}} style={{padding:'4px 8px',borderRadius:6,border:'1px solid rgba(239,68,68,0.2)',background:'rgba(239,68,68,0.06)',color:C.red,fontSize:11,cursor:'pointer'}}>Delete</button></td>
                   </tr>
                 ))}</tbody>
