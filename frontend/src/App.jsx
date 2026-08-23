@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Component } from 'react'
 import { supabase } from './lib/supabase'
 import { WhatsAppSendBtn, WhatsAppModal } from './components/WhatsAppButton'
 import { QuotePDFBar, PDFDemoPage } from './components/PDFButton'
@@ -70,6 +70,30 @@ function AuthRedirect({ session }) {
   }, [session])
   if (needsOnboard) return <Auth startOnboard={true}/>
   return <Splash/>
+}
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
+  componentDidCatch(error, info) { console.error('QLekha crash:', error, info) }
+  render() {
+    if (!this.state.error) return this.props.children
+    const msg = this.state.error?.message || String(this.state.error)
+    return (
+      <div style={{minHeight:'60vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,fontFamily:'Inter,sans-serif'}}>
+        <div style={{maxWidth:420,textAlign:'center'}}>
+          <div style={{fontSize:36,marginBottom:12}}>&#9888;&#65039;</div>
+          <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:800,color:C.ink,marginBottom:8}}>Something went wrong</div>
+          <div style={{fontSize:13,color:C.mist,lineHeight:1.7,marginBottom:20}}>This page failed to load. Your data is safe.</div>
+          <div style={{fontSize:11,fontFamily:'JetBrains Mono,monospace',color:C.mist,background:C.chalk,borderRadius:8,padding:'10px 12px',marginBottom:20,wordBreak:'break-word',textAlign:'left'}}>{msg}</div>
+          <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+            <button onClick={()=>window.location.reload()} style={{padding:'11px 20px',borderRadius:10,border:'none',background:C.steel,color:C.snow,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Syne,sans-serif'}}>Reload</button>
+            <button onClick={()=>{window.location.href='/dashboard'}} style={{padding:'11px 20px',borderRadius:10,border:'1.5px solid '+C.fog,background:'transparent',color:C.ink,fontSize:13,fontWeight:600,cursor:'pointer'}}>Dashboard</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 }
 
 function Splash() {
@@ -204,7 +228,7 @@ export function Layout({ children }) {
         )}
 
         <main style={{flex:1,overflowY:'auto',padding:mob?'16px 12px 76px':'24px',background:C.chalk}}>
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>
 
