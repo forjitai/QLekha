@@ -4,6 +4,16 @@ import { generateInvoicePDF, downloadPDF, getPDFDataUri } from '../lib/pdfgen'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
 
+const fmt = (n) => { const v = Number(n) || 0; return v >= 100000 ? '\u20b9'+(v/100000).toFixed(1)+'L' : v >= 1000 ? '\u20b9'+(v/1000).toFixed(0)+'K' : '\u20b9'+v }
+const SC = {
+  draft:     {bg:C.chalk,color:C.mist},
+  sent:      {bg:'rgba(27,79,216,0.1)',color:C.steel},
+  pending:   {bg:'rgba(217,119,6,0.1)',color:C.amber},
+  partial:   {bg:'rgba(27,79,216,0.1)',color:C.steel},
+  paid:      {bg:'rgba(22,163,74,0.1)',color:C.green},
+  overdue:   {bg:'rgba(220,38,38,0.08)',color:C.red},
+  cancelled: {bg:C.chalk,color:C.mist},
+}
 function RecordPaymentModal({ invoice, companyId, onClose, onDone }) {
   const [amount, setAmount] = useState(String(invoice.balance_due || 0))
   const [mode, setMode] = useState('bank_transfer')
