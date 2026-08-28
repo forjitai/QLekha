@@ -144,9 +144,9 @@ export default function Billing() {
     <div style={{fontFamily:'Inter,sans-serif'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
         <h2 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.ink}}>Billing</h2>
-        <button style={{background:C.steel,color:'#fff',border:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+        <a href="/quotes" style={{background:C.steel,color:'#fff',textDecoration:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600,display:'inline-block'}}>
           + New Invoice
-        </button>
+        </a>
       </div>
 
       {/* Summary cards */}
@@ -187,8 +187,8 @@ export default function Billing() {
             {loading?<div style={{padding:40,textAlign:'center',color:C.mist}}>Loading...</div>:filteredInvoices.length===0?(
               <div style={{padding:60,textAlign:'center'}}>
                 <div style={{fontSize:40,marginBottom:12}}>&#129518;</div>
-                <p style={{color:C.mist,marginBottom:16}}>No invoices yet</p>
-                <button style={{background:C.steel,color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>Create Invoice</button>
+                <p style={{color:C.mist,marginBottom:16}}>No invoices yet. Approve a quote and convert it to an invoice.</p>
+                <a href="/quotes" style={{background:C.steel,color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,display:'inline-block'}}>Convert a quote</a>
               </div>
             ):(
               <div style={{overflowX:'auto'}}>
