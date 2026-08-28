@@ -85,6 +85,7 @@ export default function Stock() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
   const [addModal, setAddModal] = useState(null)
+  const [search, setSearch] = useState('')
 
   useEffect(()=>{load()},[])
 
@@ -149,13 +150,24 @@ export default function Stock() {
     {key:'brand',label:'Brand'},
   ]
 
+  const q = search.trim().toLowerCase()
+  const match = (...vals) => !q || vals.some(v => String(v ?? '').toLowerCase().includes(q))
+  const shownProfiles = profiles.filter(p => match(p.name,p.brand,p.series,p.material_type,p.color))
+  const shownGlass    = glass.filter(g => match(g.name,g.glass_type,g.hsn_code))
+  const shownAcc      = accessories.filter(a => match(a.name,a.category,a.brand,a.unit))
+
   return (
     <div style={{fontFamily:'Inter,sans-serif'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
         <h2 style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.ink}}>Stock Manager</h2>
-        <button onClick={()=>setAddModal(tab)} style={{background:C.steel,color:'#fff',border:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-          + Add {tab==='profiles'?'Profile':tab==='glass'?'Glass':'Accessory'}
-        </button>
+        <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search stock..."
+            style={{padding:'8px 12px',borderRadius:8,border:'1.5px solid '+C.fog,fontSize:13,
+                    fontFamily:'Inter,sans-serif',color:C.ink,background:C.snow,outline:'none',minWidth:170}}/>
+          <button onClick={()=>setAddModal(tab)} style={{background:C.steel,color:'#fff',border:'none',padding:'9px 18px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>
+            + Add {tab==='profiles'?'Profile':tab==='glass'?'Glass':'Accessory'}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -171,7 +183,7 @@ export default function Stock() {
         {loading?<div style={{padding:40,textAlign:'center',color:C.mist}}>Loading...</div>:(
 
           tab==='profiles'&&(
-            profiles.length===0?(
+            shownProfiles.length===0?(
               <div style={{padding:60,textAlign:'center'}}>
                 <div style={{fontSize:40,marginBottom:12}}>&#128295;</div>
                 <p style={{color:C.mist,marginBottom:16}}>No profiles yet. Add your first profile to start quoting.</p>
@@ -181,7 +193,7 @@ export default function Stock() {
               <div style={{overflowX:'auto'}}>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr style={{background:C.chalk}}>{['Brand','Series','Material','Colour','Wt/m (kg)','Price/kg','Price/m (calc)',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
-                  <tbody>{profiles.map((p,i)=>(
+                  <tbody>{shownProfiles.map((p,i)=>(
                     <tr key={p.id} style={{borderBottom:'1px solid '+C.chalk}}>
                       <td style={{padding:'12px 14px',fontWeight:600,fontSize:13,color:C.ink}}><InlineEdit value={p.brand} onSave={v=>updateCell('profile_companies',p.id,'brand',v,setProfiles)}/></td>
                       <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12,color:C.ink}}><InlineEdit value={p.series} onSave={v=>updateCell('profile_companies',p.id,'series',v,setProfiles)}/></td>
@@ -205,7 +217,7 @@ export default function Stock() {
         )}
 
         {!loading&&tab==='glass'&&(
-          glass.length===0?(
+          shownGlass.length===0?(
             <div style={{padding:60,textAlign:'center'}}>
               <div style={{fontSize:40,marginBottom:12}}>&#128142;</div>
               <p style={{color:C.mist,marginBottom:16}}>No glass types yet.</p>
@@ -215,7 +227,7 @@ export default function Stock() {
             <div style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr style={{background:C.chalk}}>{['Name','Thickness','Price/sqft','Type','HSN',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
-                <tbody>{glass.map((g,i)=>(
+                <tbody>{shownGlass.map((g,i)=>(
                   <tr key={g.id} style={{borderBottom:'1px solid '+C.chalk}}>
                     <td style={{padding:'12px 14px',fontWeight:600,fontSize:13,color:C.ink}}><InlineEdit value={g.name} onSave={v=>updateCell('glass_types',g.id,'name',v,setGlass)}/></td>
                     <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:12}}><InlineEdit value={g.thickness_mm} type="number" onSave={v=>updateCell('glass_types',g.id,'thickness_mm',v,setGlass)}/> mm</td>
@@ -232,7 +244,7 @@ export default function Stock() {
         )}
 
         {!loading&&tab==='accessories'&&(
-          accessories.length===0?(
+          shownAcc.length===0?(
             <div style={{padding:60,textAlign:'center'}}>
               <div style={{fontSize:40,marginBottom:12}}>&#128736;&#65039;</div>
               <p style={{color:C.mist,marginBottom:16}}>No accessories yet.</p>
@@ -242,7 +254,7 @@ export default function Stock() {
             <div style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr style={{background:C.chalk}}>{['Name','Category','Unit','Price','Brand',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
-                <tbody>{accessories.map((a,i)=>(
+                <tbody>{shownAcc.map((a,i)=>(
                   <tr key={a.id} style={{borderBottom:'1px solid '+C.chalk}}>
                     <td style={{padding:'12px 14px',fontWeight:600,fontSize:13,color:C.ink}}><InlineEdit value={a.name} onSave={v=>updateCell('accessories',a.id,'name',v,setAccessories)}/></td>
                     <td style={{padding:'12px 14px'}}><span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,background:C.teal+'15',color:C.teal,textTransform:'capitalize'}}>{(a.category||'other').replace('_',' ')}</span></td>
