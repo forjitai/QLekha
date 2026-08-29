@@ -150,7 +150,7 @@ export default function Billing() {
       </div>
 
       {/* Summary cards */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:14,marginBottom:20}}>
+      <div className="qk-kpi" style={{marginBottom:20}}>
         {[
           {i:'&#128176;',v:fmt(totalBilled),l:'Total Billed',c:C.steel},
           {i:'&#9989;',v:fmt(totalCollected),l:'Collected',c:C.green},
