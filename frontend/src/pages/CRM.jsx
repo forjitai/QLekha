@@ -164,7 +164,7 @@ export default function CRM() {
       </div>
 
       {/* Summary */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:12,marginBottom:20}}>
+      <div className="qk-kpi" style={{marginBottom:20}}>
         {[
           {i:'&#128100;',v:String(clients.length),l:'Total Clients',c:C.steel},
           {i:'&#127919;',v:String(leads.filter(l=>l.status!=='won'&&l.status!=='lost').length),l:'Open Leads',c:C.teal},
