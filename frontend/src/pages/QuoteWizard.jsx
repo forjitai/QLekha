@@ -184,10 +184,15 @@ function Step3({windows,profile,onNext,onBack,initial}){
     const perimeterM=((item.width_mm+item.height_mm)*2)/1000
     const prof=profiles.find(p=>p.id===profileId)
     const gl=glass.find(g=>g.id===glassId)
-    const profileCost=prof&&prof.weight_per_meter&&prof.price_per_kg
-      ? Math.round(prof.weight_per_meter*prof.price_per_kg*perimeterM) : 0
-    const glassCost=gl&&gl.price_per_sqft ? Math.round(gl.price_per_sqft*sqft) : 0
-    return { profileCost, glassCost, unit: profileCost+glassCost }
+    const rawProfile=prof&&prof.weight_per_meter&&prof.price_per_kg
+      ? prof.weight_per_meter*prof.price_per_kg*perimeterM : 0
+    const rawGlass=gl&&gl.price_per_sqft ? gl.price_per_sqft*sqft : 0
+    // Round the unit price once, then derive the parts from it. Rounding each
+    // part on its own can leave the breakdown a rupee off the price charged.
+    const unit=Math.round(rawProfile+rawGlass)
+    const profileCost=Math.round(rawProfile)
+    const glassCost=unit-profileCost
+    return { profileCost, glassCost, unit }
   }
   function calcPrice(item,profileId,glassId){
     return priceBreakdown(item,profileId,glassId).unit
