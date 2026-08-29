@@ -745,7 +745,20 @@ function Quotes(){
   const[quotes,setQuotes]=useState([]);const[filter,setFilter]=useState('all');const[loading,setLoading]=useState(true);const[profile,setProfile]=useState(null);const[waModal,setWaModal]=useState(null);const[converting,setConverting]=useState(null);const[toast,setToast]=useState(null)
   const showToast=(msg,type='success')=>{setToast({msg,type});setTimeout(()=>setToast(null),3000)}
   const SC={draft:{bg:C.chalk,color:C.mist},sent:{bg:'rgba(27,79,216,0.1)',color:C.steel},approved:{bg:'rgba(14,165,160,0.1)',color:C.teal},rejected:{bg:'rgba(220,38,38,0.08)',color:C.red}}
-  useEffect(()=>{async function load(){setLoading(true);try{const{data:{user}}=await supabase.auth.getUser();if(!user){setLoading(false);return}const{data:ud}=await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single();if(!ud){setLoading(false);return}setProfile(ud);const{data,error:qe}=await supabase.from('quotes').select('*,clients(name,phone)').eq('company_id',ud.company_id).order('created_at',{ascending:false});if(qe)throw qe;setQuotes(data||[])}catch(e){showToast('Failed to load quotes: '+(e?.message||JSON.stringify(e)),'error')}finally{setLoading(false)}}load()},[])
+  useEffect(()=>{async function load(){setLoading(true);try{const{data:{user}}=await supabase.auth.getUser();if(!user){setLoading(false);return}const{data:ud}=await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single();if(!ud){setLoading(false);return}setProfile(ud);const{data,error:qe}=await supabase.from('quotes').select('*,clients(name,phone),quote_items(*)').eq('company_id',ud.company_id).order('created_at',{ascending:false});if(qe)throw qe;setQuotes(data||[])}catch(e){showToast('Failed to load quotes: '+(e?.message||JSON.stringify(e)),'error')}finally{setLoading(false)}}load()},[])
+  // quote_items stores item_value and hardware_name; the PDF generator expects
+  // unit_price and description. GST is held on the quote, not the line.
+  const pdfItems = (q) => (q.quote_items||[]).map(it=>({
+    title: it.title,
+    description: it.hardware_name || '',
+    width_mm: it.width_mm,
+    height_mm: it.height_mm,
+    quantity: it.quantity,
+    unit_price: Number(it.item_value)||0,
+    gst_rate: Number(q.gst_rate)||18,
+    total_amount: Number(it.total_amount)||0,
+  }))
+
   async function updateStatus(id,status){try{const{error:e}=await supabase.from('quotes').update({status}).eq('id',id);if(e)throw e;setQuotes(p=>p.map(q=>q.id===id?{...q,status}:q));showToast('Status updated to '+status)}catch(e){showToast('Update failed: '+(e?.message||JSON.stringify(e)),'error')}}
   async function convertToInvoice(quote){
     // One invoice per quote - the DB enforces this too (uniq_invoice_per_quote),
@@ -824,7 +837,7 @@ function Quotes(){
                   <span style={{fontSize:12,color:C.mist}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
                 </div>
                 <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',borderTop:'1px solid '+C.chalk,paddingTop:10}}>
-                  <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={[]} bank={profile?.companies||{}}/>
+                  <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={pdfItems(q)} bank={profile?.companies||{}}/>
                   <button onClick={()=>setWaModal(q)} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:12,cursor:'pointer',color:'#25D366',fontWeight:600}}>WA</button>
                   {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:12,cursor:'pointer',color:C.teal,whiteSpace:'nowrap',fontWeight:600}}>{converting===q.id?'...':'\u2192 Invoice'}</button>}
                 </div>
@@ -850,7 +863,7 @@ function Quotes(){
               <td style={{padding:'13px 16px',fontSize:12,color:C.mist}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
               <td style={{padding:'13px 16px'}}>
                 <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'nowrap'}}>
-                  <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={[]} bank={profile?.companies||{}}/>
+                  <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={pdfItems(q)} bank={profile?.companies||{}}/>
                   <button onClick={()=>setWaModal(q)} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:11,cursor:'pointer',color:'#25D366'}}>WA</button>
                   {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:11,cursor:'pointer',color:C.teal,whiteSpace:'nowrap'}}>{converting===q.id?'...':'\u2192 Invoice'}</button>}
                 </div>
