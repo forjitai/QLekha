@@ -784,7 +784,40 @@ function Quotes(){
         <p style={{color:C.mist,marginBottom:16}}>{filter==='all'?'No quotes yet':'No '+filter+' quotes'}</p>
         <a href="/quotes/create" style={{background:C.steel,color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600}}>Create Quote</a>
       </div>
-      :<div style={{overflowX:'auto'}}>
+      :<>
+        {/* Mobile: cards. Desktop: table. */}
+        <div style={{display:'grid',gap:10}} className="qk-cards">
+          {filtered.map(q=>{
+            const sc=SC[q.status]||SC.draft
+            const phone=q.clients?.phone||q.client_phone
+            return(
+              <div key={q.id} style={{background:C.snow,border:'1px solid '+C.glass,borderRadius:12,padding:14}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:10}}>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{q.client_name}</div>
+                    <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist,marginTop:2}}>#{q.quote_number}</div>
+                  </div>
+                  <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:15,fontWeight:600,color:C.ink,whiteSpace:'nowrap'}}>
+                    {'\u20b9'+(q.grand_total||0).toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+                  <select value={q.status} onChange={e=>updateStatus(q.id,e.target.value)}
+                    style={{padding:'4px 10px',borderRadius:100,fontSize:11,fontWeight:700,border:'none',cursor:'pointer',background:sc.bg,color:sc.color,outline:'none'}}>
+                    {['draft','sent','approved','rejected'].map(s=><option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
+                  </select>
+                  <span style={{fontSize:12,color:C.mist}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
+                </div>
+                <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                  <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={[]} bank={profile?.companies||{}}/>
+                  <button onClick={()=>setWaModal(q)} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:12,cursor:'pointer',color:'#25D366',fontWeight:600}}>WA</button>
+                  {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:12,cursor:'pointer',color:C.teal,whiteSpace:'nowrap',fontWeight:600}}>{converting===q.id?'...':'\u2192 Invoice'}</button>}
+                </div>
+              </div>
+            )})}
+        </div>
+
+        <div style={{overflowX:'auto'}} className="qk-table">
         <table style={{width:'100%',borderCollapse:'collapse'}}>
           <thead><tr style={{background:C.chalk}}>{['Quote #','Client','Amount','Status','Date','Actions'].map(h=>(<th key={h} style={{padding:'11px 16px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>))}</tr></thead>
           <tbody>{filtered.map(q=>{
@@ -801,16 +834,17 @@ function Quotes(){
               </td>
               <td style={{padding:'13px 16px',fontSize:12,color:C.mist}}>{new Date(q.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td>
               <td style={{padding:'13px 16px'}}>
-                <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'wrap'}}>
+                <div style={{display:'flex',gap:5,alignItems:'center',flexWrap:'nowrap'}}>
                   <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={[]} bank={profile?.companies||{}}/>
                   <button onClick={()=>setWaModal(q)} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:11,cursor:'pointer',color:'#25D366'}}>WA</button>
-                  {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:11,cursor:'pointer',color:C.teal,whiteSpace:'nowrap'}}>{converting===q.id?'...':'→ Invoice'}</button>}
+                  {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'5px 8px',borderRadius:6,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:11,cursor:'pointer',color:C.teal,whiteSpace:'nowrap'}}>{converting===q.id?'...':'\u2192 Invoice'}</button>}
                 </div>
               </td>
             </tr>)})}
           </tbody>
         </table>
-      </div>}
+        </div>
+      </>}
     </div>
     {waModal&&<WhatsAppModal isOpen={!!waModal} onClose={()=>setWaModal(null)} contact={{name:waModal.client_name,phone:waModal.clients?.phone||waModal.client_phone}} companyId={profile?.company_id} companyName={profile?.companies?.name||'QLekha'}/>}
   </>)
