@@ -329,6 +329,7 @@ export function Layout({ children }) {
                 {NAV.find(n => loc === n.path || (n.path !== '/dashboard' && loc.startsWith(n.path)))?.label || 'Dashboard'}
               </div>
             </div>
+            <NotificationBell mob={false}/>
             <a href="/quotes/create" style={{background:C.steel,color:C.snow,textDecoration:'none',padding:'8px 18px',borderRadius:8,fontSize:13,fontWeight:600,fontFamily:'Inter,sans-serif'}}>
               + New Quote
             </a>
