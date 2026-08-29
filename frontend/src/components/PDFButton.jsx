@@ -49,13 +49,13 @@ export function PDFPreviewModal({ isOpen, onClose, docUri, filename, onDownload,
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
       <div style={{ background:C.ink, borderRadius:16, width:'100%', maxWidth:860, height:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 32px 80px rgba(0,0,0,0.4)', overflow:'hidden' }}>
         {/* Header */}
-        <div style={{ padding:'14px 20px', display:'flex', alignItems:'center', gap:12, borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ width:32, height:32, borderRadius:8, background:C.steel, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>📄</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:'Syne,sans-serif', fontSize:14, fontWeight:700, color:'#fff' }}>{filename}</div>
+        <div style={{ padding:'14px 16px', display:'flex', alignItems:'center', gap:10, borderBottom:'1px solid rgba(255,255,255,0.08)', flexWrap:'wrap' }}>
+          <div style={{ width:32, height:32, borderRadius:8, background:C.steel, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>📄</div>
+          <div style={{ flex:'1 1 120px', minWidth:0 }}>
+            <div style={{ fontFamily:'Syne,sans-serif', fontSize:13, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{filename}</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>PDF Preview</div>
           </div>
-          <div style={{ display:'flex', gap:8 }}>
+          <div style={{ display:'flex', gap:8, flexShrink:0 }}>
             {onWhatsApp && (
               <button onClick={onWhatsApp} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, border:'1px solid rgba(37,211,102,0.4)', background:'rgba(37,211,102,0.1)', color:'#25D366', fontSize:12, fontWeight:600, cursor:'pointer' }}>
                 💬 WhatsApp
