@@ -181,7 +181,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:20,marginBottom:20}}>
+      <div className="qk-split" style={{marginBottom:20}}>
         {/* Recent quotes */}
         <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,overflow:'hidden'}}>
           <div style={{padding:'16px 20px',borderBottom:'1px solid '+C.glass,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
