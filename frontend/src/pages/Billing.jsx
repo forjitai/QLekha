@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { generateInvoicePDF, downloadPDF } from '../lib/pdfgen'
+import { generateInvoicePDF, generateReceiptPDF, shareReceiptViaWhatsApp, downloadPDF } from '../lib/pdfgen'
 
 const C={ink:'#0F1923',steel:'#1B4FD8',steelLt:'#3B6FEA',copper:'#D97941',chalk:'#F7F8FA',glass:'#E8F4FD',mist:'#6B7A8D',fog:'#C4CDD8',snow:'#FFFFFF',green:'#16A34A',red:'#DC2626',amber:'#D97706',purp:'#7C3AED',teal:'#0EA5A0',navy:'#0F1923',blue:'#1B4FD8',blueLt:'#3B6FEA',bg:'#F7F8FA',white:'#FFFFFF',g100:'#E8F4FD',g200:'#C4CDD8',g400:'#6B7A8D',g50:'#F7F8FA',g600:'#374151',bluePale:'rgba(27,79,216,0.08)'}
 
@@ -91,6 +91,7 @@ export default function Billing() {
   const [tab, setTab] = useState('invoices')
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
+  const [receipts, setReceipts] = useState([])
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
@@ -107,12 +108,14 @@ export default function Billing() {
       const { data: ud, error: ue } = await supabase.from('users').select('company_id,companies(*)').eq('id',user.id).single()
       if (ue || !ud) return setLoading(false)
       setProfile(ud)
-      const [ir, pr] = await Promise.all([
+      const [ir, pr, rr] = await Promise.all([
         supabase.from('invoices').select('*').eq('company_id',ud.company_id).order('created_at',{ascending:false}),
         supabase.from('payments').select('*').eq('company_id',ud.company_id).order('payment_date',{ascending:false}),
+        supabase.from('receipts').select('*').eq('company_id',ud.company_id).order('created_at',{ascending:false}),
       ])
       setInvoices(ir.data||[])
       setPayments(pr.data||[])
+      setReceipts(rr.data||[])
     } catch(e) {
       console.error('Billing load error:', e)
     } finally {
@@ -155,6 +158,18 @@ export default function Billing() {
     setPdfLoading(null)
   }
 
+  async function downloadReceiptPDF(rcp) {
+    setPdfLoading(rcp.id)
+    try {
+      const co = profile?.companies || {}
+      const inv = invoices.find(i => i.id === rcp.invoice_id) || null
+      const doc = await generateReceiptPDF(rcp, co, inv,
+        { bank_name: co.bank_name, account_number: co.account_number, ifsc_code: co.ifsc_code, upi_id: co.upi_id })
+      downloadPDF(doc, 'Receipt-' + rcp.receipt_number + '.pdf')
+    } catch(e) { alert('PDF error: ' + (e?.message || e)) }
+    setPdfLoading(null)
+  }
+
   const filteredInvoices = filter==='all' ? invoices : invoices.filter(i=>i.status===filter)
   const totalBilled = invoices.reduce((s,i)=>s+(i.grand_total||0),0)
   const totalCollected = invoices.reduce((s,i)=>s+(i.paid_amount||0),0)
@@ -188,7 +203,7 @@ export default function Billing() {
 
       {/* Tabs */}
       <div style={{display:'flex',gap:0,background:C.snow,border:'1px solid '+C.glass,borderRadius:10,padding:3,marginBottom:16,width:'fit-content'}}>
-        {['invoices','payments'].map(t=>(
+        {['invoices','payments','receipts'].map(t=>(
           <button key={t} onClick={()=>setTab(t)} style={{padding:'7px 20px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:600,background:tab===t?C.ink:'transparent',color:tab===t?'#fff':C.mist,textTransform:'capitalize',transition:'all 0.15s'}}>
             {t}
           </button>
