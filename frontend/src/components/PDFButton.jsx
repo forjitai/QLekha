@@ -45,6 +45,7 @@ function Spin() {
 // ── Preview Modal ─────────────────────────────────────────────
 export function PDFPreviewModal({ isOpen, onClose, docUri, filename, onDownload, onWhatsApp }) {
   if (!isOpen) return null
+  const isNarrow = typeof window !== 'undefined' && window.innerWidth < 768
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
       <div style={{ background:C.ink, borderRadius:16, width:'100%', maxWidth:860, height:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 32px 80px rgba(0,0,0,0.4)', overflow:'hidden' }}>
@@ -69,16 +70,30 @@ export function PDFPreviewModal({ isOpen, onClose, docUri, filename, onDownload,
         </div>
         {/* PDF iframe */}
         <div style={{ flex:1, background:'#525659', padding:16, overflow:'auto' }}>
-          {docUri ? (
+          {!docUri ? (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color:'rgba(255,255,255,0.4)', fontSize:13 }}>
+              Generating PDF...
+            </div>
+          ) : isNarrow ? (
+            // Mobile browsers cannot render a PDF inside an iframe - they show a
+            // dead placeholder. Offer the actions that actually work instead.
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'100%', gap:14, textAlign:'center', padding:20 }}>
+              <div style={{ fontSize:40 }}>📄</div>
+              <div style={{ color:'#fff', fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:700 }}>Your PDF is ready</div>
+              <div style={{ color:'rgba(255,255,255,0.5)', fontSize:13, lineHeight:1.6, maxWidth:280 }}>
+                Phone browsers cannot preview PDFs inline. Download it or send it straight to your client.
+              </div>
+              <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:4 }}>
+                <button onClick={onDownload} style={{ padding:'11px 22px', borderRadius:10, border:'none', background:C.steel, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'Syne,sans-serif' }}>Download</button>
+                {onWhatsApp && <button onClick={onWhatsApp} style={{ padding:'11px 22px', borderRadius:10, border:'1px solid rgba(37,211,102,0.4)', background:'rgba(37,211,102,0.12)', color:'#25D366', fontSize:14, fontWeight:700, cursor:'pointer' }}>Send on WhatsApp</button>}
+              </div>
+            </div>
+          ) : (
             <iframe
               src={docUri}
               title="PDF Preview"
               style={{ width:'100%', height:'100%', border:'none', borderRadius:4, minHeight:400 }}
             />
-          ) : (
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color:'rgba(255,255,255,0.4)', fontSize:13 }}>
-              Generating PDF...
-            </div>
           )}
         </div>
       </div>
