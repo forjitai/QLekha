@@ -198,7 +198,37 @@ export default function CRM() {
               {!search&&<button onClick={()=>setAddClient(true)} style={{background:C.steel,color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>Add First Client</button>}
             </div>
           ):(
-            <div style={{overflowX:'auto'}}>
+            <>
+                  <div className="qk-cards" style={{gap:10}}>
+                    {filteredClients.map(c=>{
+                      const tc = TAG_COLORS[c.tag]||TAG_COLORS.individual||{bg:C.glass,c:C.mist}
+                      const balance = (c.total_billed||0)-(c.total_paid||0)
+                      return (
+                        <div key={c.id} onClick={()=>setSelClient(selClient?.id===c.id?null:c)}
+                          style={{background:C.snow,border:'1px solid '+C.glass,borderRadius:12,padding:14,cursor:'pointer'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                            <div style={{width:38,height:38,borderRadius:'50%',flexShrink:0,background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontSize:15,fontWeight:700,color:'#fff'}}>
+                              {(c.name||'?')[0].toUpperCase()}
+                            </div>
+                            <div style={{minWidth:0,flex:1}}>
+                              <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.name}</div>
+                              <div style={{fontSize:12,color:C.mist,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.phone||'\u2014'}{c.city?' \u00b7 '+c.city:''}</div>
+                            </div>
+                            <span style={{fontSize:10,fontWeight:700,padding:'3px 9px',borderRadius:100,background:tc.bg,color:tc.c,textTransform:'capitalize',whiteSpace:'nowrap'}}>{c.tag||'individual'}</span>
+                          </div>
+                          <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                            <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Quotes</div>
+                              <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink,fontWeight:600}}>{c.total_quotes||0}</div></div>
+                            <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Billed</div>
+                              <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink,fontWeight:600}}>{fmt(c.total_billed||0)}</div></div>
+                            <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Balance</div>
+                              <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:700,color:balance>0?C.amber:C.green}}>{balance>0?fmt(balance):'Paid'}</div></div>
+                          </div>
+                        </div>
+                      )})}
+                  </div>
+                  <div className="qk-table" style={{overflowX:'auto'}}>
+
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr style={{background:C.chalk}}>{['Client','Phone','City','Tag','Quotes','Total Billed','Balance','Actions'].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
                 <tbody>
@@ -236,6 +266,7 @@ export default function CRM() {
                 </tbody>
               </table>
               <div style={{padding:'10px 14px',background:C.chalk,borderTop:'1px solid '+C.glass,fontSize:11,color:C.mist}}>{filteredClients.length} clients</div>
+                  </>
             </div>
           )}
         </div>
