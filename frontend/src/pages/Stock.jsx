@@ -190,7 +190,35 @@ export default function Stock() {
                 <button onClick={()=>setAddModal('profiles')} style={{background:C.steel,color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>Add Profile</button>
               </div>
             ):(
-              <div style={{overflowX:'auto'}}>
+              <>
+              <div className="qk-cards" style={{gap:10}}>
+                {shownProfiles.map(p=>(
+                  <div key={p.id} style={{background:C.snow,border:'1px solid '+C.glass,borderRadius:12,padding:14,opacity:p.is_active===false?0.55:1}}>
+                    <div style={{display:'flex',justifyContent:'space-between',gap:10,marginBottom:8}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.ink}}>{p.name||p.brand}</div>
+                        <div style={{fontSize:12,color:C.mist,marginTop:2}}>{[p.brand,p.series,p.color].filter(Boolean).join(' \u00b7 ')}</div>
+                      </div>
+                      <span style={{padding:'3px 9px',borderRadius:100,fontSize:10,fontWeight:700,background:'rgba(27,79,216,0.08)',color:C.steel,textTransform:'capitalize',height:'fit-content',whiteSpace:'nowrap'}}>{p.material_type}</span>
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,marginBottom:10}}>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Wt/m</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink}}><InlineEdit value={p.weight_per_meter} type="number" onSave={v=>updateCell('profile_companies',p.id,'weight_per_meter',v,setProfiles)}/></div></div>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Price/kg</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink}}><InlineEdit value={p.price_per_kg} type="number" prefix="Rs." onSave={v=>updateCell('profile_companies',p.id,'price_per_kg',v,setProfiles)}/></div></div>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Price/m</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.teal,fontWeight:600}}>{p.weight_per_meter&&p.price_per_kg?'Rs.'+Math.round(p.weight_per_meter*p.price_per_kg):'-'}</div></div>
+                    </div>
+                    <div style={{display:'flex',gap:6,borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                      <button onClick={async()=>{await supabase.from('profile_companies').update({is_active:!p.is_active}).eq('id',p.id);setProfiles(prev=>prev.map(x=>x.id===p.id?{...x,is_active:!x.is_active}:x))}}
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',color:'#0EA5A0',fontSize:12,fontWeight:600,cursor:'pointer'}}>{p.is_active===false?'Activate':'Deactivate'}</button>
+                      <button onClick={async()=>{if(confirm('Delete this profile?')){await supabase.from('profile_companies').delete().eq('id',p.id);setProfiles(prev=>prev.filter(x=>x.id!==p.id))}}}
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(220,38,38,0.25)',background:'rgba(220,38,38,0.06)',color:C.red,fontSize:12,fontWeight:600,cursor:'pointer'}}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="qk-table" style={{overflowX:'auto'}}>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr style={{background:C.chalk}}>{['Brand','Series','Material','Colour','Wt/m (kg)','Price/kg','Price/m (calc)',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
                   <tbody>{shownProfiles.map((p,i)=>(
@@ -210,6 +238,7 @@ export default function Stock() {
                   ))}</tbody>
                 </table>
                 <div style={{padding:'10px 14px',background:C.chalk,borderTop:'1px solid '+C.glass,fontSize:11,color:C.mist}}>&#128231; Click any cell to edit inline</div>
+              </>
               </div>
             )
           )
