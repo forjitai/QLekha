@@ -124,15 +124,34 @@ export default function Billing() {
     setPdfLoading(inv.id)
     try {
       const co = profile?.companies || {}
+
+      // Line items live on the quote this invoice came from. Without them the
+      // PDF prints an empty table under the column headers.
+      let items = []
+      if (inv.quote_id) {
+        const { data: rows } = await supabase
+          .from('quote_items').select('*').eq('quote_id', inv.quote_id)
+        items = (rows||[]).map(it=>({
+          title: it.title,
+          description: it.hardware_name || '',
+          width_mm: it.width_mm,
+          height_mm: it.height_mm,
+          quantity: it.quantity,
+          unit_price: Number(it.item_value)||0,
+          gst_rate: Number(inv.gst_rate)||18,
+          total_amount: Number(it.total_amount)||0,
+        }))
+      }
+
       const doc = await generateInvoicePDF(
         {...inv, type: inv.type || 'tax_invoice'},
         co,
-        { name: inv.client_name, city: inv.client_address },
-        [],
+        { name: inv.client_name, phone: inv.client_phone, city: inv.client_address },
+        items,
         { bank_name: co.bank_name, account_number: co.account_number, ifsc_code: co.ifsc_code, upi_id: co.upi_id }
       )
       downloadPDF(doc, 'Invoice-' + inv.invoice_number + '.pdf')
-    } catch(e) { alert('PDF error: ' + e.message) }
+    } catch(e) { alert('PDF error: ' + (e?.message || e)) }
     setPdfLoading(null)
   }
 
