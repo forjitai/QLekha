@@ -162,7 +162,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI cards */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:20}}>
+      <div className="qk-kpi" style={{marginBottom:20}}>
         <KPI icon="&#128176;" value={fmt(stats.thisMonthRevenue)} label="Revenue this month" sub={'Total: '+fmt(stats.totalRevenue)} color={C.steel} trend={stats.revTrend}/>
         <KPI icon="&#9989;" value={fmt(stats.collected)} label="Total collected" sub={'Outstanding: '+fmt(stats.outstanding)} color={C.green}/>
         <KPI icon="&#128203;" value={String(stats.totalQuotes)} label="Total quotes" sub={stats.sentQuotes+' sent, '+stats.approvedQuotes+' approved'} color={C.teal}/>
