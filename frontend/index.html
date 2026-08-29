@@ -20,6 +20,21 @@
     ::-webkit-scrollbar-thumb{background:#C4CDD8;border-radius:2px}
     input,select,textarea{font-family:Inter,sans-serif}
     a{transition:opacity 0.15s}
+    /* Responsive list pattern: cards on phones, tables on wider screens */
+    .qk-cards { display: grid; }
+    .qk-table { display: none; }
+    @media (min-width: 768px) {
+      .qk-cards { display: none !important; }
+      .qk-table { display: block !important; }
+    }
+    /* KPI grids: 2 across on phones instead of 1 giant card per row */
+    .qk-kpi { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    @media (min-width: 768px) {
+      .qk-kpi { grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; }
+    }
+    /* Stop long words/numbers blowing out narrow cards */
+    .qk-cards, .qk-kpi { min-width: 0; }
+    .qk-cards * { min-width: 0; }
   </style>
 </head>
 <body style="margin:0;background:#F7F8FA">
