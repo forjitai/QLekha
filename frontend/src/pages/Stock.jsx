@@ -238,8 +238,8 @@ export default function Stock() {
                   ))}</tbody>
                 </table>
                 <div style={{padding:'10px 14px',background:C.chalk,borderTop:'1px solid '+C.glass,fontSize:11,color:C.mist}}>&#128231; Click any cell to edit inline</div>
-              </>
               </div>
+              </>
             )
           )
 
