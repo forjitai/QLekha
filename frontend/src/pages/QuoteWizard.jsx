@@ -213,7 +213,11 @@ function Step3({windows,profile,onNext,onBack,initial}){
     }))
   }
 
-  const grandTotal=items.reduce((s,i)=>s+i.total_amount,0)
+  // Match Step 4 exactly: round the subtotal and the tax once, not per line,
+  // otherwise the figure here can differ by a rupee or two from the saved quote.
+  const stepSubtotal = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity),0))
+  const stepGst      = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity*(i.gst_rate||0)/100),0))
+  const grandTotal   = stepSubtotal + stepGst
 
   if(loading)return<div style={{padding:40,textAlign:'center',color:C.mist}}>Loading stock...</div>
 
