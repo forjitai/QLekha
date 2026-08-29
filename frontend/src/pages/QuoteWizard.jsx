@@ -176,15 +176,21 @@ function Step3({windows,profile,onNext,onBack,initial}){
     })
   },[profile])
 
-  function calcPrice(item,profileId,glassId,instl){
-    const sqm=(item.width_mm/1000)*(item.height_mm/1000)
-    const sqft=sqm*10.764
+  // Returns the per-unit cost and its breakdown so it can be stored and shown.
+  // Installation is a quote-level charge only - adding it here would multiply it
+  // by quantity and tax it, then it is added again on the totals step.
+  function priceBreakdown(item,profileId,glassId){
+    const sqft=(item.width_mm/1000)*(item.height_mm/1000)*10.764
+    const perimeterM=((item.width_mm+item.height_mm)*2)/1000
     const prof=profiles.find(p=>p.id===profileId)
     const gl=glass.find(g=>g.id===glassId)
-    const profCost=prof&&prof.weight_per_meter&&prof.price_per_kg?
-      (prof.weight_per_meter*prof.price_per_kg*(item.width_mm+item.height_mm)*2/1000):0
-    const glassCost=gl&&gl.price_per_sqft?gl.price_per_sqft*sqft:0
-    return Math.round(profCost+glassCost+(parseFloat(instl)||0))
+    const profileCost=prof&&prof.weight_per_meter&&prof.price_per_kg
+      ? Math.round(prof.weight_per_meter*prof.price_per_kg*perimeterM) : 0
+    const glassCost=gl&&gl.price_per_sqft ? Math.round(gl.price_per_sqft*sqft) : 0
+    return { profileCost, glassCost, unit: profileCost+glassCost }
+  }
+  function calcPrice(item,profileId,glassId){
+    return priceBreakdown(item,profileId,glassId).unit
   }
 
   function upd(id,k,v){
@@ -192,8 +198,11 @@ function Step3({windows,profile,onNext,onBack,initial}){
       if(it.id!==id)return it
       const updated={...it,[k]:v}
       if(['profileId','glassId','installation'].includes(k)||k==='unit_price'){
-        const auto=k!=='unit_price'?calcPrice(updated,updated.profileId,updated.glassId,updated.installation):null
+        const auto=k!=='unit_price'?calcPrice(updated,updated.profileId,updated.glassId):null
         const price=k==='unit_price'?parseFloat(v)||0:(auto||0)
+        const bd=priceBreakdown(updated,updated.profileId,updated.glassId)
+        updated.profile_cost=bd.profileCost
+        updated.glass_cost=bd.glassCost
         updated.unit_price=price
         updated.total_amount=Math.round(price*updated.quantity*(1+updated.gst_rate/100))
       }
