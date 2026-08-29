@@ -291,11 +291,21 @@ function Step4({client,items,profile,onBack,onDone}){
   const[saved,setSaved]=useState(null)
   const[pdfUri,setPdfUri]=useState(null)
 
-  const subtotal=items.reduce((s,i)=>s+(i.unit_price*i.quantity),0)
-  const gstAmt=items.reduce((s,i)=>s+(i.unit_price*i.quantity*i.gst_rate/100),0)
-  const grandTotal=Math.round(subtotal+gstAmt+parseFloat(installation||0)-parseFloat(discount||0))
+  // Money is computed once, in whole rupees, so what is shown, saved and
+  // printed can never disagree. CGST and SGST are split so they always sum
+  // to the exact tax charged (never off by a rupee on a GST invoice).
+  const subtotal    = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity),0))
+  const gstTotal    = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity*(i.gst_rate||0)/100),0))
+  const cgstAmount  = Math.floor(gstTotal/2)
+  const sgstAmount  = gstTotal - cgstAmount
+  const installAmt  = Math.round(parseFloat(installation)||0)
+  const discountAmt = Math.round(parseFloat(discount)||0)
+  const grandTotal  = subtotal + gstTotal + installAmt - discountAmt
 
   async function saveQuote(){
+    if(!items.length) return setErr('Add at least one window before saving.')
+    if(subtotal<=0) return setErr('This quote totals zero. Pick a profile and glass, or enter a price, before saving.')
+    if(discountAmt>subtotal+gstTotal) return setErr('Discount cannot be more than the quote total.')
     setSaving(true);setErr('')
     try{
       const co=profile.companies||{}
@@ -309,10 +319,10 @@ function Step4({client,items,profile,onBack,onDone}){
         client_address:client.city,
         quote_number:qNum,
         status:'draft',
-        sub_total:Math.round(subtotal),
-        cgst_amount:Math.round(gstAmt/2),sgst_amount:Math.round(gstAmt/2),
-        discount_amount:parseFloat(discount)||0,
-        installation:parseFloat(installation)||0,
+        sub_total:subtotal,
+        cgst_amount:cgstAmount,sgst_amount:sgstAmount,
+        discount_amount:discountAmt,
+        installation:installAmt,
         grand_total:grandTotal,
         expires_at:validUntil,
         notes
@@ -323,7 +333,8 @@ function Step4({client,items,profile,onBack,onDone}){
         title:it.title,hardware_name:it.description||'',
         width_mm:it.width_mm,height_mm:it.height_mm,
         quantity:it.quantity,
-        total_amount:it.total_amount,item_value:it.unit_price
+        total_amount:it.total_amount,item_value:it.unit_price,
+        profile_cost:it.profile_cost??null,glass_cost:it.glass_cost??null
       }))
       await supabase.from('quote_items').insert(qItems)
       setSaved(q)
