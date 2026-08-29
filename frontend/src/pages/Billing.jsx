@@ -354,6 +354,81 @@ export default function Billing() {
         </div>
       )}
 
+      {tab === 'receipts' && (
+        <div>
+          {loading ? (
+            <div style={{padding:40,textAlign:'center',color:C.mist}}>Loading...</div>
+          ) : receipts.length === 0 ? (
+            <div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,padding:60,textAlign:'center'}}>
+              <div style={{fontSize:40,marginBottom:12}}>&#129534;</div>
+              <p style={{color:C.mist,marginBottom:6}}>No receipts yet.</p>
+              <p style={{color:C.mist,fontSize:12}}>A receipt is issued automatically each time you record a payment.</p>
+            </div>
+          ) : (
+            <>
+              <div className="qk-cards" style={{gap:10}}>
+                {receipts.map(rc=>(
+                  <div key={rc.id} style={{background:C.snow,border:'1px solid '+C.glass,borderRadius:12,padding:14}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:10}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{rc.client_name}</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist,marginTop:2}}>#{rc.receipt_number}</div>
+                      </div>
+                      <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:15,fontWeight:700,color:C.green,whiteSpace:'nowrap'}}>{fmt(rc.amount)}</div>
+                    </div>
+                    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
+                      <span style={{padding:'3px 9px',borderRadius:100,fontSize:10,fontWeight:700,background:C.glass,color:C.ink,textTransform:'capitalize'}}>{(rc.payment_mode||'').replace('_',' ')}</span>
+                      <span style={{fontSize:12,color:C.mist}}>{rc.date?new Date(rc.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):''}</span>
+                      {rc.transaction_ref && <span style={{fontSize:11,color:C.mist,fontFamily:'JetBrains Mono,monospace'}}>{rc.transaction_ref}</span>}
+                    </div>
+                    <div style={{display:'flex',gap:6,flexWrap:'wrap',borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                      <button onClick={()=>downloadReceiptPDF(rc)} disabled={pdfLoading===rc.id}
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(27,79,216,0.3)',background:'rgba(27,79,216,0.06)',color:C.steel,fontSize:12,fontWeight:600,cursor:'pointer'}}>{pdfLoading===rc.id?'...':'PDF'}</button>
+                      <button onClick={()=>shareReceiptViaWhatsApp(rc, profile?.companies?.name||'QLekha')}
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:12,fontWeight:600,cursor:'pointer'}}>WA</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="qk-table" style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,overflow:'hidden'}}>
+                <div style={{overflowX:'auto'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead>
+                      <tr style={{background:C.chalk}}>
+                        {['Receipt #','Date','Client','Amount','Mode','Reference','Actions'].map(h=>(
+                          <th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {receipts.map(rc=>(
+                        <tr key={rc.id} style={{borderBottom:'1px solid '+C.chalk}}>
+                          <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist}}>#{rc.receipt_number}</td>
+                          <td style={{padding:'12px 14px',fontSize:12,color:C.mist}}>{rc.date?new Date(rc.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):''}</td>
+                          <td style={{padding:'12px 14px',fontSize:13,fontWeight:600,color:C.ink}}>{rc.client_name}</td>
+                          <td style={{padding:'12px 14px',fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:600,color:C.green}}>{fmt(rc.amount)}</td>
+                          <td style={{padding:'12px 14px'}}><span style={{padding:'2px 8px',borderRadius:6,background:C.glass,fontSize:11,color:C.ink,textTransform:'capitalize'}}>{(rc.payment_mode||'').replace('_',' ')}</span></td>
+                          <td style={{padding:'12px 14px',fontSize:11,color:C.mist,fontFamily:'JetBrains Mono,monospace'}}>{rc.transaction_ref||'-'}</td>
+                          <td style={{padding:'12px 14px'}}>
+                            <div style={{display:'flex',gap:5}}>
+                              <button onClick={()=>downloadReceiptPDF(rc)} disabled={pdfLoading===rc.id}
+                                style={{padding:'5px 9px',borderRadius:6,border:'1px solid rgba(27,79,216,0.3)',background:'rgba(27,79,216,0.06)',color:C.steel,fontSize:11,fontWeight:600,cursor:'pointer'}}>{pdfLoading===rc.id?'...':'PDF'}</button>
+                              <button onClick={()=>shareReceiptViaWhatsApp(rc, profile?.companies?.name||'QLekha')}
+                                style={{padding:'5px 9px',borderRadius:6,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:11,fontWeight:600,cursor:'pointer'}}>WA</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {payModal && (
         <RecordPaymentModal
           invoice={payModal}
