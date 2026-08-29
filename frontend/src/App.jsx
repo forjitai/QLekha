@@ -752,8 +752,16 @@ function Quotes(){
       const{data:inv,error}=await supabase.from('invoices').insert({
         company_id:quote.company_id,quote_id:quote.id,
         client_id:quote.client_id,client_name:quote.client_name,
+        client_phone:quote.client_phone||quote.clients?.phone||null,
         invoice_number:invNum,type:'tax_invoice',status:'pending',
-        base_amount:quote.sub_total,cgst_amount:Math.round((quote.cgst_amount||0)+(quote.sgst_amount||0))/2,sgst_amount:Math.round((quote.cgst_amount||0)+(quote.sgst_amount||0))/2,
+        // Carry the quote's tax split across unchanged. Re-halving it here
+        // produced half-rupee amounts (the /2 sat outside Math.round) and
+        // could disagree with the quote the customer already approved.
+        base_amount:quote.sub_total,
+        taxable_amount:quote.sub_total,
+        cgst_amount:quote.cgst_amount||0,
+        sgst_amount:quote.sgst_amount||0,
+        gst_rate:quote.gst_rate||18,
         discount_amount:quote.discount_amount||0,
         installation:quote.installation||0,
         grand_total:quote.grand_total,
