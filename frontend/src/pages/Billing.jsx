@@ -191,7 +191,53 @@ export default function Billing() {
                 <a href="/quotes" style={{background:C.steel,color:'#fff',textDecoration:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,display:'inline-block'}}>Convert a quote</a>
               </div>
             ):(
-              <div style={{overflowX:'auto'}}>
+              <>
+              <div className="qk-cards" style={{gap:10}}>
+                {filteredInvoices.map(inv=>{
+                  const sc = SC[inv.status]||SC.draft
+                  const overdue = inv.status==='overdue' || (inv.due_date && new Date(inv.due_date)<new Date() && inv.status!=='paid')
+                  return (
+                    <div key={inv.id} style={{background:C.snow,border:'1px solid '+(overdue&&inv.status!=='paid'?'rgba(220,38,38,0.25)':C.glass),borderRadius:12,padding:14}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:10}}>
+                        <div style={{minWidth:0}}>
+                          <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.client_name}</div>
+                          <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist,marginTop:2}}>#{inv.invoice_number}</div>
+                        </div>
+                        <span style={{...sc,padding:'3px 9px',borderRadius:100,fontSize:10,fontWeight:700,textTransform:'capitalize',whiteSpace:'nowrap'}}>{inv.status}</span>
+                      </div>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,marginBottom:10}}>
+                        <div>
+                          <div style={{fontSize:10,color:C.mist,textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:700}}>Total</div>
+                          <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink,fontWeight:600}}>{fmt(inv.grand_total)}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:10,color:C.mist,textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:700}}>Paid</div>
+                          <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.green,fontWeight:600}}>{fmt(inv.paid_amount)}</div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:10,color:C.mist,textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:700}}>Balance</div>
+                          <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:700,color:(inv.balance_due||0)>0?C.amber:C.green}}>{fmt(inv.balance_due)}</div>
+                        </div>
+                      </div>
+                      <div style={{fontSize:12,color:overdue&&inv.status!=='paid'?C.red:C.mist,marginBottom:10}}>
+                        Due {inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '\u2014'}
+                      </div>
+                      <div style={{display:'flex',gap:6,flexWrap:'wrap',borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                        <button onClick={()=>{const ph=(inv.client_phone||'').replace(/\D/g,'');if(ph)window.open('https://wa.me/'+ph+'?text='+encodeURIComponent('Hi '+inv.client_name+', invoice #'+inv.invoice_number+' for '+fmt(inv.grand_total)+' is ready.'),'_blank')}}
+                          style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:12,fontWeight:600,cursor:'pointer'}}>WA</button>
+                        <button onClick={()=>downloadInvoicePDF(inv)} disabled={pdfLoading===inv.id}
+                          style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(27,79,216,0.3)',background:'rgba(27,79,216,0.06)',color:C.steel,fontSize:12,fontWeight:600,cursor:'pointer'}}>{pdfLoading===inv.id?'...':'PDF'}</button>
+                        {inv.status!=='paid'&&inv.status!=='cancelled'&&(
+                          <button onClick={()=>setPayModal(inv)}
+                            style={{padding:'6px 10px',borderRadius:7,border:'1px solid '+C.green+'40',background:C.green+'10',color:C.green,fontSize:12,fontWeight:600,cursor:'pointer'}}>Record Payment</button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="qk-table">
+<div style={{overflowX:'auto'}}>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead>
                     <tr style={{background:C.chalk}}>
@@ -230,6 +276,8 @@ export default function Billing() {
                   </tbody>
                 </table>
               </div>
+              </div>
+              </>
             )}
           </div>
         </>
