@@ -240,6 +240,7 @@ export default function Stock() {
                 <div style={{padding:'10px 14px',background:C.chalk,borderTop:'1px solid '+C.glass,fontSize:11,color:C.mist}}>&#128231; Click any cell to edit inline</div>
               </div>
               </>
+              </>
             )
           )
 
@@ -253,7 +254,43 @@ export default function Stock() {
               <button onClick={()=>setAddModal('glass')} style={{background:C.steel,color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>Add Glass Type</button>
             </div>
           ):(
-            <div style={{overflowX:'auto'}}>
+            <>
+              <div className="qk-cards" style={{gap:10}}>
+                {shownGlass.map(g=>(
+                  <div key={g.id} style={{background:C.snow,border:'1px solid '+C.glass,borderRadius:12,padding:14}}>
+                    <div style={{display:'flex',justifyContent:'space-between',gap:10,marginBottom:10}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.ink}}>{g.name}</div>
+                        <div style={{fontSize:12,color:C.mist,marginTop:2}}>
+                          <InlineEdit value={g.glass_type} onSave={v=>updateCell('glass_types',g.id,'glass_type',v,setGlass)}/>
+                        </div>
+                      </div>
+                      <div style={{textAlign:'right',flexShrink:0}}>
+                        <div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Price/sqft</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:15,fontWeight:600,color:C.ink}}>
+                          <InlineEdit value={g.price_per_sqft} type="number" prefix="Rs." onSave={v=>updateCell('glass_types',g.id,'price_per_sqft',v,setGlass)}/>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Thickness</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink}}>
+                          <InlineEdit value={g.thickness_mm} type="number" onSave={v=>updateCell('glass_types',g.id,'thickness_mm',v,setGlass)}/> mm
+                        </div></div>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>HSN</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:C.ink}}>
+                          <InlineEdit value={g.hsn_code} onSave={v=>updateCell('glass_types',g.id,'hsn_code',v,setGlass)}/>
+                        </div></div>
+                    </div>
+                    <div style={{borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                      <button onClick={async()=>{if(confirm('Delete this glass type?')){await supabase.from('glass_types').delete().eq('id',g.id);setGlass(prev=>prev.filter(x=>x.id!==g.id))}}}
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(220,38,38,0.25)',background:'rgba(220,38,38,0.06)',color:C.red,fontSize:12,fontWeight:600,cursor:'pointer'}}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+                <div style={{fontSize:11,color:C.mist,textAlign:'center',padding:'4px 0'}}>Tap any value to edit it</div>
+              </div>
+              <div className="qk-table" style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr style={{background:C.chalk}}>{['Name','Thickness','Price/sqft','Type','HSN',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
                 <tbody>{shownGlass.map((g,i)=>(
