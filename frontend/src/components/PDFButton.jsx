@@ -19,6 +19,14 @@ const C = {
   ink: '#0F1923', steel: '#1B4FD8', snow: '#FFFFFF',
   mist: '#6B7A8D', glass: '#E8F4FD', fog: '#C4CDD8', chalk: '#F7F8FA',
 }
+// Inject the spinner keyframes once, not once per rendered row.
+if (typeof document !== 'undefined' && !document.getElementById('qlekha-spin')) {
+  const s = document.createElement('style')
+  s.id = 'qlekha-spin'
+  s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}'
+  document.head.appendChild(s)
+}
+
 
 function useToast() {
   const [toast, setToast] = useState(null)
@@ -125,7 +133,6 @@ export function QuotePDFBar({ quote, company, client, items, bank }) {
 
   return (
     <>
-      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap', position:'relative' }}>
         <button onClick={handlePreview} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid ' + C.g100, background:C.snow, color:C.ink, fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
           {loading ? <Spin/> : '👁'} Preview PDF
@@ -201,7 +208,6 @@ export function InvoicePDFBar({ invoice, company, client, items, bank }) {
 
   return (
     <>
-      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap', position:'relative' }}>
         <button onClick={handlePreview} disabled={loading} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, border:'1px solid ' + C.g100, background:C.snow, color:C.ink, fontSize:12, fontWeight:600, cursor:loading?'default':'pointer' }}>
           {loading ? <Spin/> : '👁'} Preview PDF
@@ -307,7 +313,6 @@ export function PDFDemoPage() {
 
   return (
     <div style={{ maxWidth:700, margin:'0 auto', padding:24, fontFamily:'Inter,sans-serif' }}>
-      <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
 
       {/* Header */}
       <div style={{ marginBottom:28 }}>
