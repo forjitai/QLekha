@@ -24,8 +24,11 @@ function RecordPaymentModal({ invoice, companyId, onClose, onDone }) {
   const MODES = ['cash','bank_transfer','upi','cheque','card']
 
   async function submit() {
-    const amt = parseFloat(amount)
+    const amt = Math.round(parseFloat(amount))
     if (!amt || amt <= 0) return setErr('Enter a valid amount.')
+    const due = Math.max(0, (invoice.balance_due ?? invoice.grand_total) || 0)
+    if (amt > due) return setErr('That is more than the ' + fmt(due) + ' still due on this invoice.')
+
     setLoading(true)
     const { error: pe } = await supabase.from('payments').insert({
       company_id: companyId,
@@ -36,13 +39,12 @@ function RecordPaymentModal({ invoice, companyId, onClose, onDone }) {
       payment_date: date,
       notes: note,
     })
-    if (pe) { setLoading(false); return setErr(pe.message) }
-    // Update invoice
-    const newPaid = (invoice.paid_amount || 0) + amt
-    const newBalance = Math.max(0, (invoice.grand_total || 0) - newPaid)
-    const newStatus = newBalance <= 0 ? 'paid' : 'partial'
-    await supabase.from('invoices').update({ paid_amount: newPaid, balance_due: newBalance, status: newStatus }).eq('id', invoice.id)
     setLoading(false)
+    if (pe) return setErr(pe?.message || 'Could not record the payment.')
+
+    // The trg_invoice_payment trigger recalculates paid_amount, balance_due and
+    // status from the sum of all payments on this invoice. Writing them here too
+    // would overwrite correct figures with a stale client-side total.
     onDone()
   }
 
