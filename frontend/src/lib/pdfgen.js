@@ -412,6 +412,66 @@ export async function generateInvoicePDF(invoice, company, client, items, bank) 
   return doc
 }
 
+
+// ── Receipt ────────────────────────────────────────────────────
+// A receipt acknowledges a payment, so it shows what was received and what is
+// still owed - not the line items, which already appeared on the invoice.
+export async function generateReceiptPDF(receipt, company, invoice, bank) {
+  const paid    = Number(receipt.amount) || 0
+  const total   = Number(invoice?.grand_total) || 0
+  const balance = Math.max(0, Number(invoice?.balance_due ?? 0))
+  const modeLabel = {
+    cash:'Cash', upi:'UPI', bank_transfer:'Bank Transfer',
+    cheque:'Cheque', card:'Card', other:'Other',
+  }[receipt.payment_mode] || 'Payment'
+
+  const rows = [{
+    title: 'Payment received - ' + modeLabel,
+    description: [
+      invoice?.invoice_number ? 'Against invoice ' + invoice.invoice_number : null,
+      receipt.transaction_ref ? 'Ref: ' + receipt.transaction_ref : null,
+    ].filter(Boolean).join('   '),
+    quantity: 1,
+    unit_price: paid,
+    total_amount: paid,
+  }]
+
+  return await buildQLekhaPDF({
+    docType: 'PAYMENT RECEIPT',
+    docNumber: receipt.receipt_number,
+    date: receipt.date || receipt.created_at,
+    company,
+    client: { name: receipt.client_name, phone: receipt.client_phone },
+    items: rows,
+    totals: {
+      subtotal: paid,
+      gst_amount: 0,
+      installation: 0,
+      discount: 0,
+      grand_total: paid,
+    },
+    bank,
+    terms: total
+      ? 'Received ' + fmtRs(paid) + ' against invoice ' + (invoice?.invoice_number||'') +
+        ' of ' + fmtRs(total) + '. Balance outstanding: ' + fmtRs(balance) + '.'
+      : 'Received with thanks.',
+    theme: company.pdf_design,
+  })
+}
+
+function fmtRs(n){ return 'Rs. ' + (Number(n)||0).toLocaleString('en-IN') }
+
+export async function shareReceiptViaWhatsApp(receipt, companyName) {
+  const text = 'Hi ' + (receipt.client_name || 'there') +
+    ', we have received your payment of *Rs. ' + (Number(receipt.amount)||0).toLocaleString('en-IN') +
+    '*.\n\nReceipt *#' + receipt.receipt_number + '* is attached.\n\nThank you!\n\n_' + companyName + ' via QLekha_'
+  const num = (receipt.client_phone || '').replace(/\D/g, '')
+  const waNum = num.length === 10 ? '91' + num : num
+  if (!waNum) return { ok:false, error:'No phone number on this receipt' }
+  window.open('https://wa.me/' + waNum + '?text=' + encodeURIComponent(text), '_blank')
+  return { ok:true }
+}
+
 export function downloadPDF(doc, filename) {
   doc.save(filename)
 }
