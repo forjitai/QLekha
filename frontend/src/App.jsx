@@ -108,6 +108,113 @@ function Splash() {
 }
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
+function NotificationBell({ mob }) {
+  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        // Recompute alerts, then read them back.
+        await supabase.rpc('refresh_notifications')
+        const { data } = await supabase.from('notifications')
+          .select('*').order('created_at', { ascending: false }).limit(30)
+        if (!cancelled) setItems(data || [])
+      } catch (e) { console.error('notifications:', e?.message) }
+    }
+    load()
+    const t = setInterval(load, 5 * 60 * 1000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [])
+
+  const unread = items.filter(n => !n.is_read).length
+
+  async function markAllRead() {
+    const ids = items.filter(n => !n.is_read).map(n => n.id)
+    if (!ids.length) return
+    setLoading(true)
+    setItems(prev => prev.map(n => ({ ...n, is_read: true })))
+    await supabase.from('notifications').update({ is_read: true }).in('id', ids)
+    setLoading(false)
+  }
+
+  async function openItem(n) {
+    if (!n.is_read) {
+      setItems(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x))
+      supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
+    }
+    if (n.link) window.location.href = n.link
+  }
+
+  const dot = { urgent: C.red, warn: C.amber, info: C.steel }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(v => !v)} aria-label="Notifications"
+        style={{ position:'relative', background:'none', border:'none', cursor:'pointer',
+                 fontSize: mob ? 19 : 17, lineHeight:1, padding:'4px 6px', color:C.mist }}>
+        🔔
+        {unread > 0 && (
+          <span style={{ position:'absolute', top:0, right:0, minWidth:16, height:16, padding:'0 4px',
+                         borderRadius:100, background:C.red, color:'#fff', fontSize:9, fontWeight:700,
+                         display:'flex', alignItems:'center', justifyContent:'center',
+                         fontFamily:'JetBrains Mono,monospace' }}>
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)}
+               style={{ position:'fixed', inset:0, zIndex:190 }}/>
+          <div style={{ position:'absolute', top:'calc(100% + 8px)', right:0, zIndex:200,
+                        width: mob ? 'calc(100vw - 32px)' : 360, maxWidth:360,
+                        maxHeight:'70vh', overflowY:'auto', background:C.snow,
+                        border:'1px solid '+C.fog, borderRadius:14,
+                        boxShadow:'0 16px 48px rgba(15,25,35,0.18)' }}>
+            <div style={{ padding:'12px 14px', borderBottom:'1px solid '+C.chalk,
+                          display:'flex', alignItems:'center', gap:10, position:'sticky', top:0, background:C.snow }}>
+              <span style={{ fontFamily:'Syne,sans-serif', fontSize:14, fontWeight:800, color:C.ink, flex:1 }}>
+                Needs attention
+              </span>
+              {unread > 0 && (
+                <button onClick={markAllRead} disabled={loading}
+                  style={{ background:'none', border:'none', cursor:'pointer', color:C.steel,
+                           fontSize:12, fontWeight:600, padding:0 }}>
+                  Mark all read
+                </button>
+              )}
+            </div>
+
+            {items.length === 0 ? (
+              <div style={{ padding:'32px 20px', textAlign:'center' }}>
+                <div style={{ fontSize:28, marginBottom:8 }}>✅</div>
+                <div style={{ fontSize:13, color:C.mist }}>Nothing needs chasing today.</div>
+              </div>
+            ) : items.map(n => (
+              <div key={n.id} onClick={() => openItem(n)}
+                style={{ padding:'12px 14px', borderBottom:'1px solid '+C.chalk, cursor:'pointer',
+                         display:'flex', gap:10, background: n.is_read ? 'transparent' : 'rgba(27,79,216,0.03)' }}>
+                <span style={{ width:7, height:7, borderRadius:'50%', flexShrink:0, marginTop:5,
+                               background: n.is_read ? C.fog : (dot[n.severity] || C.steel) }}/>
+                <div style={{ minWidth:0, flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight: n.is_read ? 500 : 700, color:C.ink, marginBottom:2 }}>
+                    {n.title}
+                  </div>
+                  {n.body && <div style={{ fontSize:12, color:C.mist, lineHeight:1.5 }}>{n.body}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Layout({ children }) {
   const loc = window.location.pathname
   const [mob, setMob] = useState(window.innerWidth < 768)
@@ -209,6 +316,7 @@ export function Layout({ children }) {
             <a href="/quotes/create" style={{background:C.steel,color:C.snow,textDecoration:'none',padding:'7px 14px',borderRadius:8,fontSize:12,fontWeight:700,fontFamily:'Syne,sans-serif'}}>
               + Quote
             </a>
+            <NotificationBell mob={true}/>
             <a href="/settings" style={{color:C.mist,textDecoration:'none',fontSize:18}}>⚙️</a>
           </header>
         )}
