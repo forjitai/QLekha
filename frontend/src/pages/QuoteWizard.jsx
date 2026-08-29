@@ -424,7 +424,7 @@ function Step4({client,items,profile,onBack,onDone}){
       <label style={LB}>Notes</label>
       <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Any special instructions..." style={{...IS,resize:'vertical',minHeight:60}}/>
       <div style={{background:C.ink,borderRadius:12,padding:'14px 18px',marginBottom:16}}>
-        {[['Subtotal',subtotal],['GST',Math.round(gstAmt)],['Installation',parseFloat(installation)||0],['Discount',-(parseFloat(discount)||0)]].map(([l,v])=>v!==0&&(
+        {[['Subtotal',subtotal],['CGST',cgstAmount],['SGST',sgstAmount],['Installation',installAmt],['Discount',-discountAmt]].map(([l,v])=>v!==0&&(
           <div key={l} style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
             <span style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{l}</span>
             <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:'rgba(255,255,255,0.8)'}}>₹{Math.abs(v).toLocaleString('en-IN')}</span>
