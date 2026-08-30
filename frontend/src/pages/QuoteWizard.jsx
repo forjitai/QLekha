@@ -241,7 +241,7 @@ function Step3({windows,profile,onNext,onBack,initial}){
   return(
     <div>
       <div style={{fontFamily:'Syne,sans-serif',fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>Pricing</div>
-      <p style={{fontSize:13,color:C.mist,marginBottom:16}}>Set price per window. Pick profile and glass to auto-calculate.</p>
+      <p style={{fontSize:13,color:C.mist,marginBottom:16}}>Pick a window type and glass and the price is calculated from its bill of materials.</p>
       <div style={{display:'flex',flexDirection:'column',gap:14,marginBottom:16}}>
         {items.map((item,idx)=>(
           <div key={item.id} style={{background:C.chalk,borderRadius:12,padding:16,border:'1px solid '+C.glass}}>
@@ -252,12 +252,27 @@ function Step3({windows,profile,onNext,onBack,initial}){
               </div>
               <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:14,fontWeight:700,color:C.steel}}>₹{item.total_amount.toLocaleString('en-IN')}</div>
             </div>
-            {profiles.length>0&&(
+            {windowTypes.length===0 ? (
+              <div style={{background:'rgba(217,119,6,0.08)',border:'1px solid rgba(217,119,6,0.25)',borderRadius:8,
+                           padding:'10px 12px',fontSize:12,color:C.amber,marginBottom:10,lineHeight:1.6}}>
+                No window types set up yet. Open <a href="/designer" style={{color:C.amber,fontWeight:700}}>Designer</a> to
+                add them, then pricing calculates automatically. You can still type a price below.
+              </div>
+            ) : (
               <>
-                <label style={LB}>Profile</label>
-                <select value={item.profileId} onChange={e=>upd(item.id,'profileId',e.target.value)} style={{...IS,appearance:'none'}}>
-                  <option value="">Select profile...</option>
-                  {profiles.map(p=><option key={p.id} value={p.id}>{p.brand} {p.series}</option>)}
+                <label style={LB}>Window Type</label>
+                <select value={item.windowTypeId} onChange={e=>upd(item.id,'windowTypeId',e.target.value)} style={{...IS,appearance:'none'}}>
+                  <option value="">Select window type...</option>
+                  {windowTypes.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </>
+            )}
+            {colours.length>0&&(
+              <>
+                <label style={LB}>Finish</label>
+                <select value={item.colour} onChange={e=>upd(item.id,'colour',e.target.value)} style={{...IS,appearance:'none'}}>
+                  <option value="">Default rate</option>
+                  {colours.map(c=><option key={c} value={c}>{String(c).replace('_',' ')}</option>)}
                 </select>
               </>
             )}
@@ -286,6 +301,28 @@ function Step3({windows,profile,onNext,onBack,initial}){
                 <input type="number" min="1" value={item.quantity} onChange={e=>upd(item.id,'quantity',parseInt(e.target.value)||1)} style={IS}/>
               </div>
             </div>
+
+            {pricing[item.id] && <div style={{fontSize:12,color:C.mist,marginTop:8}}>Calculating from the bill of materials...</div>}
+
+            {item.profile_detail && item.profile_detail.length>0 && (
+              <div style={{marginTop:12,borderTop:'1px solid '+C.glass,paddingTop:10}}>
+                <div style={{fontSize:10,fontWeight:700,color:C.mist,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:7}}>
+                  Material breakdown{item.sqft?' \u00b7 '+item.sqft+' sqft':''}
+                </div>
+                {item.profile_detail.map((l,li)=>(
+                  <div key={li} style={{display:'flex',justifyContent:'space-between',gap:8,fontSize:12,color:C.mist,marginBottom:3}}>
+                    <span style={{minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.name}</span>
+                    <span style={{fontFamily:'JetBrains Mono,monospace',whiteSpace:'nowrap'}}>{l.metres}m · {'\u20b9'+l.cost}</span>
+                  </div>
+                ))}
+                {[['Glass',item.glass_cost],['Wastage',item.wastage_cost],['Labour',item.labour_cost]]
+                  .filter(([,v])=>v>0).map(([lab,v])=>(
+                  <div key={lab} style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.mist,marginBottom:3}}>
+                    <span>{lab}</span><span style={{fontFamily:'JetBrains Mono,monospace'}}>{'\u20b9'+v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
