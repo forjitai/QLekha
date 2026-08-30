@@ -317,7 +317,39 @@ export default function Stock() {
               <button onClick={()=>setAddModal('accessories')} style={{background:C.steel,color:'#fff',border:'none',padding:'10px 20px',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>Add Accessory</button>
             </div>
           ):(
-            <div style={{overflowX:'auto'}}>
+            <>
+              <div className="qk-cards" style={{gap:10}}>
+                {shownAcc.map(a=>(
+                  <div key={a.id} style={{background:C.snow,border:'1px solid '+C.glass,borderRadius:12,padding:14}}>
+                    <div style={{display:'flex',justifyContent:'space-between',gap:10,marginBottom:10}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.ink}}>{a.name}</div>
+                        <div style={{marginTop:4}}>
+                          <span style={{padding:'2px 8px',borderRadius:100,fontSize:10,fontWeight:700,background:'rgba(14,165,160,0.1)',color:C.teal,textTransform:'capitalize'}}>{a.category||'other'}</span>
+                        </div>
+                      </div>
+                      <div style={{textAlign:'right',flexShrink:0}}>
+                        <div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Price</div>
+                        <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:15,fontWeight:600,color:C.ink}}>
+                          <InlineEdit value={a.price} type="number" prefix="Rs." onSave={v=>updateCell('accessories',a.id,'price',v,setAccessories)}/>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Unit</div>
+                        <div style={{fontSize:13,color:C.ink}}><InlineEdit value={a.unit} onSave={v=>updateCell('accessories',a.id,'unit',v,setAccessories)}/></div></div>
+                      <div><div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Brand</div>
+                        <div style={{fontSize:13,color:C.ink}}><InlineEdit value={a.brand} onSave={v=>updateCell('accessories',a.id,'brand',v,setAccessories)}/></div></div>
+                    </div>
+                    <div style={{borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                      <button onClick={async()=>{if(confirm('Delete this accessory?')){await supabase.from('accessories').delete().eq('id',a.id);setAccessories(prev=>prev.filter(x=>x.id!==a.id))}}}
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(220,38,38,0.25)',background:'rgba(220,38,38,0.06)',color:C.red,fontSize:12,fontWeight:600,cursor:'pointer'}}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+                <div style={{fontSize:11,color:C.mist,textAlign:'center',padding:'4px 0'}}>Tap any value to edit it</div>
+              </div>
+              <div className="qk-table" style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr style={{background:C.chalk}}>{['Name','Category','Unit','Price','Brand',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
                 <tbody>{shownAcc.map((a,i)=>(
@@ -333,6 +365,7 @@ export default function Stock() {
               </table>
               <div style={{padding:'10px 14px',background:C.chalk,borderTop:'1px solid '+C.glass,fontSize:11,color:C.mist}}>&#128231; Click any cell to edit inline</div>
             </div>
+              </>
           )
         )}
       </div>
