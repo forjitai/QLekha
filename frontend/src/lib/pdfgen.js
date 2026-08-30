@@ -278,8 +278,18 @@ async function buildQLekhaPDF({
 
   totRow('Subtotal', totals.subtotal || 0)
   if (totals.installation > 0) totRow('Installation', totals.installation)
+  if (totals.transport > 0)    totRow('Transport', totals.transport)
   if (totals.discount > 0)     totRow('Discount', -(totals.discount), false, [200, 50, 50])
-  totRow('GST', totals.gst_amount || 0)
+  // A GST document must show the split it actually charged: a single IGST
+  // line inter-state, or CGST and SGST separately within the state.
+  if (totals.igst_enabled && (totals.igst || 0) > 0) {
+    totRow('IGST', totals.igst)
+  } else if ((totals.cgst || 0) > 0 || (totals.sgst || 0) > 0) {
+    totRow('CGST', totals.cgst || 0)
+    totRow('SGST', totals.sgst || 0)
+  } else {
+    totRow('GST', totals.gst_amount || 0)
+  }
 
   // Grand total highlight
   doc.setFillColor(dr, dg, db)
