@@ -281,7 +281,44 @@ export default function CRM() {
               <p style={{color:C.mist,marginBottom:16}}>{search?'No leads match "'+search+'"':'No leads yet. Add leads from enquiries.'}</p>
             </div>
           ):(
-            <div style={{overflowX:'auto'}}>
+            <>
+            <div className="qk-cards" style={{gap:10}}>
+              {filteredLeads.map(l=>{
+                const ls = LEAD_STATUS[l.status]||LEAD_STATUS.new
+                const overdue = l.follow_up_date && new Date(l.follow_up_date) < new Date()
+                return (
+                  <div key={l.id} style={{background:C.snow,border:'1px solid '+(overdue?'rgba(220,38,38,0.25)':C.glass),borderRadius:12,padding:14}}>
+                    <div style={{display:'flex',justifyContent:'space-between',gap:10,marginBottom:10}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.name}</div>
+                        <div style={{fontSize:12,color:C.mist,marginTop:2}}>{l.phone||'\u2014'}</div>
+                      </div>
+                      {l.value_estimate ? (
+                        <div style={{textAlign:'right',flexShrink:0}}>
+                          <div style={{fontSize:10,color:C.mist,fontWeight:700,textTransform:'uppercase'}}>Est.</div>
+                          <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:14,fontWeight:600,color:C.ink}}>{fmt(l.value_estimate)}</div>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginBottom:10}}>
+                      <span style={{padding:'2px 8px',borderRadius:6,background:C.glass,color:C.ink,fontSize:11,textTransform:'capitalize'}}>{l.source||'other'}</span>
+                      <span style={{fontSize:12,color:overdue?C.red:C.mist}}>
+                        {l.follow_up_date ? (overdue?'Follow up overdue \u00b7 ':'Follow up ')+new Date(l.follow_up_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : 'No follow-up set'}
+                      </span>
+                    </div>
+                    <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',borderTop:'1px solid '+C.chalk,paddingTop:10}}>
+                      <select value={l.status||'new'} onChange={async e=>{await supabase.from('leads').update({status:e.target.value}).eq('id',l.id);setLeads(prev=>prev.map(x=>x.id===l.id?{...x,status:e.target.value}:x))}}
+                        style={{padding:'5px 10px',borderRadius:100,fontSize:11,fontWeight:700,border:'none',background:ls.bg,color:ls.c,cursor:'pointer',outline:'none',textTransform:'capitalize'}}>
+                        {Object.keys(LEAD_STATUS).map(s=><option key={s} value={s}>{s.replace('_',' ')}</option>)}
+                      </select>
+                      {l.phone && <a href={'https://wa.me/'+l.phone.replace(/\D/g,'')} target="_blank" rel="noopener noreferrer"
+                        style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:12,fontWeight:600,textDecoration:'none'}}>WA</a>}
+                    </div>
+                  </div>
+                )})}
+            </div>
+            <div className="qk-table">
+<div style={{overflowX:'auto'}}>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr style={{background:C.chalk}}>{['Name','Phone','Source','Status','Est. Value','Follow-up',''].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:C.mist,borderBottom:'1px solid '+C.glass}}>{h}</th>)}</tr></thead>
                 <tbody>
@@ -308,6 +345,7 @@ export default function CRM() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}
