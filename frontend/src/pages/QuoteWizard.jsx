@@ -154,68 +154,80 @@ function Step2({onNext,onBack,initial}){
 
 // STEP 3: Materials & Pricing
 function Step3({windows,profile,onNext,onBack,initial}){
-  const[profiles,setProfiles]=useState([])
+  const[windowTypes,setWindowTypes]=useState([])
   const[glass,setGlass]=useState([])
+  const[colours,setColours]=useState([])
   const[loading,setLoading]=useState(true)
+  const[pricing,setPricing]=useState({})
   const[items,setItems]=useState(initial||windows.map((w,i)=>({
     id:i+1,windowId:w.id,title:w.type,description:w.note,
     width_mm:w.width,height_mm:w.height,quantity:w.qty,
     unit_price:0,gst_rate:18,total_amount:0,
-    profileId:'',glassId:'',installation:0
+    windowTypeId:'',glassId:'',colour:'',installation:0
   })))
 
   useEffect(()=>{
     if(!profile?.company_id)return
     Promise.all([
-      supabase.from('profile_companies').select('id,brand,series,weight_per_meter,price_per_kg').eq('company_id',profile.company_id),
-      supabase.from('glass_types').select('id,name,price_per_sqft').eq('company_id',profile.company_id)
-    ]).then(([pr,gr])=>{
-      setProfiles(pr.data||[])
+      supabase.from('window_types').select('id,name,system,shutters').eq('company_id',profile.company_id).eq('is_active',true).order('name'),
+      supabase.from('glass_types').select('id,name,price_per_sqft').eq('company_id',profile.company_id),
+      supabase.from('profile_weight_prices').select('colour').eq('company_id',profile.company_id).order('colour')
+    ]).then(([tr,gr,cr])=>{
+      setWindowTypes(tr.data||[])
       setGlass(gr.data||[])
+      setColours((cr.data||[]).map(x=>x.colour))
       setLoading(false)
     })
   },[profile])
 
-  // Returns the per-unit cost and its breakdown so it can be stored and shown.
-  // Installation is a quote-level charge only - adding it here would multiply it
-  // by quantity and tax it, then it is added again on the totals step.
-  function priceBreakdown(item,profileId,glassId){
-    const sqft=(item.width_mm/1000)*(item.height_mm/1000)*10.764
-    const perimeterM=((item.width_mm+item.height_mm)*2)/1000
-    const prof=profiles.find(p=>p.id===profileId)
-    const gl=glass.find(g=>g.id===glassId)
-    const rawProfile=prof&&prof.weight_per_meter&&prof.price_per_kg
-      ? prof.weight_per_meter*prof.price_per_kg*perimeterM : 0
-    const rawGlass=gl&&gl.price_per_sqft ? gl.price_per_sqft*sqft : 0
-    // Round the unit price once, then derive the parts from it. Rounding each
-    // part on its own can leave the breakdown a rupee off the price charged.
-    const unit=Math.round(rawProfile+rawGlass)
-    const profileCost=Math.round(rawProfile)
-    const glassCost=unit-profileCost
-    return { profileCost, glassCost, unit }
-  }
-  function calcPrice(item,profileId,glassId){
-    return priceBreakdown(item,profileId,glassId).unit
+  // Pricing lives in the database (price_window). It walks the window type's
+  // bill of materials - frame, track, sash, interlock, bead - and returns the
+  // metres, kilograms and cost of each profile, plus glass, wastage and labour.
+  async function reprice(item){
+    if(!item.windowTypeId) return
+    setPricing(p=>({...p,[item.id]:true}))
+    const { data, error } = await supabase.rpc('price_window',{
+      p_window_type_id:item.windowTypeId,
+      p_width_mm:item.width_mm,
+      p_height_mm:item.height_mm,
+      p_glass_id:item.glassId||null,
+      p_colour:item.colour||null,
+    })
+    setPricing(p=>({...p,[item.id]:false}))
+    if(error||!data) return
+    setItems(prev=>prev.map(it=>{
+      if(it.id!==item.id) return it
+      const unit=Math.round(data.unit_price||0)
+      return {...it,
+        unit_price:unit,
+        profile_cost:Math.round(data.profile_cost||0),
+        glass_cost:Math.round(data.glass_cost||0),
+        wastage_cost:Math.round(data.wastage_cost||0),
+        labour_cost:Math.round(data.labour_cost||0),
+        profile_detail:data.lines||null,
+        sqft:data.sqft,
+        total_amount:Math.round(unit*it.quantity*(1+it.gst_rate/100)),
+      }
+    }))
   }
 
   function upd(id,k,v){
+    let target=null
     setItems(prev=>prev.map(it=>{
       if(it.id!==id)return it
       const updated={...it,[k]:v}
-      if(['profileId','glassId','installation'].includes(k)||k==='unit_price'){
-        const auto=k!=='unit_price'?calcPrice(updated,updated.profileId,updated.glassId):null
-        const price=k==='unit_price'?parseFloat(v)||0:(auto||0)
-        const bd=priceBreakdown(updated,updated.profileId,updated.glassId)
-        updated.profile_cost=bd.profileCost
-        updated.glass_cost=bd.glassCost
+      if(k==='unit_price'){
+        const price=parseFloat(v)||0
         updated.unit_price=price
         updated.total_amount=Math.round(price*updated.quantity*(1+updated.gst_rate/100))
       }
       if(k==='quantity'||k==='gst_rate'){
-        updated.total_amount=Math.round(updated.unit_price*(parseInt(v)||1)*(1+updated.gst_rate/100))
+        updated.total_amount=Math.round(updated.unit_price*(parseInt(updated.quantity)||1)*(1+updated.gst_rate/100))
       }
+      if(['windowTypeId','glassId','colour'].includes(k)) target=updated
       return updated
     }))
+    if(target) reprice(target)
   }
 
   // Match Step 4 exactly: round the subtotal and the tax once, not per line,
