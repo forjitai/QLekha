@@ -345,6 +345,7 @@ export default function CRM() {
                 </tbody>
               </table>
             </div>
+            </div>
             </>
           )}
         </div>
