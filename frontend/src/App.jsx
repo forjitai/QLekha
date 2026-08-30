@@ -783,34 +783,11 @@ function Settings() {
   const upd=(k,v)=>setCo(p=>({...p,[k]:v}))
   useEffect(()=>{async function load(){setLoading(true);try{const{data:{user}}=await supabase.auth.getUser();if(!user)return setLoading(false);const{data:ud}=await supabase.from('users').select('*,companies(*)').eq('id',user.id).single();if(!ud)return setLoading(false);setUsr(ud);setCo(ud.companies||{});const{data:team}=await supabase.from('users').select('*').eq('company_id',ud.company_id);setUsers(team||[]);setLoading(false)}catch(e){console.error("Load error:",e);setLoading(false)}}load()},[])
   const save=async(fields)=>{if(!co?.id)return;setSaving(true);const{error}=await supabase.from('companies').update(fields).eq('id',co.id);setSaving(false);if(error)showToast('Save failed: '+error.message,'error');else showToast('Saved \u2713')}
-  async function initPay(plan){
-      const PRICES={starter:'plan_QJx1',growth:'plan_QJx2',pro:'plan_QJx3'}
-      const AMOUNTS={starter:49900,growth:149900,pro:349900}
-      if(!window.Razorpay){
-        const s=document.createElement('script');s.src='https://checkout.razorpay.com/v1/checkout.js';
-        document.head.appendChild(s);
-        await new Promise(r=>s.onload=r)
-      }
-      const options={
-        key:'rzp_live_qlekha',
-        amount:AMOUNTS[plan.k],
-        currency:'INR',
-        name:'QLekha',
-        description:plan.l+' Plan - Monthly',
-        prefill:{name:co?.owner_name||'',email:co?.email||'',contact:co?.phone||''},
-        theme:{color:C.steel},
-        handler:async function(response){
-          await supabase.from('companies').update({
-            plan:plan.k,
-            plan_expires_at:new Date(Date.now()+30*864e5).toISOString(),
-            razorpay_payment_id:response.razorpay_payment_id
-          }).eq('id',co.id)
-          setCo(p=>({...p,plan:plan.k}))
-          showToast('Plan upgraded to '+plan.l+' \u2713')
-        }
-      }
-      new window.Razorpay(options).open()
-    }
+  // Paid plans are not live yet. The pricing table stays visible so the plans
+    // are known, but upgrading is disabled until billing is switched back on.
+    // To restore: reinstate the Razorpay checkout here and re-enable the button.
+    const BILLING_ENABLED = false
+
     const TABS=[{k:'company',i:'&#127962;',l:'Company'},{k:'bank',i:'&#127974;',l:'Bank & GST'},{k:'pdf',i:'&#127912;',l:'PDF'},{k:'wa',i:'&#128172;',l:'WhatsApp'},{k:'users',i:'&#128101;',l:'Users'},{k:'plan',i:'&#9889;',l:'Plan'}]
   const THEMES=[{k:'classic_blue',l:'Classic Blue',c:C.steel},{k:'midnight',l:'Midnight',c:C.ink},{k:'teal_fresh',l:'Teal Fresh',c:'#0EA5A0'},{k:'amber_warm',l:'Amber Warm',c:'#FFB400'},{k:'forest_green',l:'Forest Green',c:'#16A34A'},{k:'deep_purple',l:'Deep Purple',c:'#7C3AED'}]
   const PLANS=[{k:'trial',l:'Trial',p:'\u20b90',d:'14 days',c:C.mist,f:['5 quotes','1 user']},{k:'starter',l:'Starter',p:'\u20b9499',d:'per month',c:C.steel,f:['50 quotes/mo','WhatsApp']},{k:'growth',l:'Growth',p:'\u20b91,499',d:'per month',c:C.teal,f:['Unlimited quotes','5 users']},{k:'pro',l:'Pro',p:'\u20b93,499',d:'per month',c:C.purp,f:['Everything','15 users','API']}]
@@ -844,7 +821,7 @@ function Settings() {
       showToast(m.includes('uniq_invoice_per_quote')?'This quote has already been invoiced.':'Failed: '+(m||'could not create the invoice'),'error')
     }}} style={{...sb,background:'#075E54'}}>&#128172; Test Connection</button></div><div style={{background:'rgba(37,211,102,0.04)',border:'1px solid rgba(37,211,102,0.2)',borderRadius:14,padding:18}}><div style={{fontFamily:'Syne,sans-serif',fontSize:13,fontWeight:700,color:'#065f46',marginBottom:6}}>Without API Token</div><div style={{fontSize:12,color:'#065f46',lineHeight:1.7}}>All buttons open wa.me links with pre-filled text. Works perfectly for most businesses.</div></div></div>)}
         {tab==='users'&&(<div style={{display:'flex',flexDirection:'column',gap:16}}><div style={{background:C.snow,borderRadius:16,border:'1px solid '+C.glass,overflow:'hidden'}}><div style={{padding:'16px 20px',borderBottom:'1px solid '+C.glass}}><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700}}>Team Members</div></div>{users.map((u,i)=>(<div key={u.id} style={{display:'flex',alignItems:'center',gap:12,padding:'13px 20px',borderBottom:i<users.length-1?'1px solid '+C.chalk:'none'}}><div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,'+C.blue+','+C.teal+')',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'#fff',flexShrink:0}}>{(u.name||u.email||'?')[0].toUpperCase()}</div><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.ink}}>{u.name||'Unnamed'}</div><div style={{fontSize:11,color:C.mist}}>{u.email||u.phone}</div></div><span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:100,background:(RC[u.role]||C.mist)+'20',color:RC[u.role]||C.mist,textTransform:'capitalize'}}>{u.role}</span>{u.id===usr?.id?<span style={{fontSize:11,color:C.mist}}>You</span>:<div style={{display:'flex',gap:6}}><select value={u.role} onChange={async e=>{await supabase.from('users').update({role:e.target.value}).eq('id',u.id);setUsers(prev=>prev.map(x=>x.id===u.id?{...x,role:e.target.value}:x));showToast('Role updated \u2713')}} style={{padding:'4px 8px',borderRadius:6,border:'1px solid '+C.fog,fontSize:11,color:C.ink,cursor:'pointer',outline:'none'}}>{ROLES.map(r=><option key={r} value={r}>{r}</option>)}</select></div>}</div>))}</div></div>)}
-        {tab==='plan'&&(<div style={{display:'flex',flexDirection:'column',gap:14}}>{co?.plan==='trial'&&<div style={{background:'linear-gradient(135deg,#0B1F3A,#1a3557)',borderRadius:16,padding:20,display:'flex',alignItems:'center',gap:14}}><span style={{fontSize:28}}>&#9889;</span><div style={{flex:1}}><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'#fff'}}>Trial &mdash; {trialDays} days remaining</div></div><div style={{fontFamily:'JetBrains Mono,monospace',fontSize:22,fontWeight:500,color:C.amber}}>{trialDays}d</div></div>}<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12}}>{PLANS.map(plan=>{const cur=co?.plan===plan.k;return(<div key={plan.k} style={{background:C.snow,borderRadius:16,border:'2px solid '+(cur?plan.c:C.glass),padding:18,position:'relative'}}>{cur&&<div style={{position:'absolute',top:10,right:10,fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:100,background:plan.c+'20',color:plan.c}}>Current</div>}<div style={{fontFamily:'Syne,sans-serif',fontSize:15,fontWeight:800,color:C.ink,marginBottom:2}}>{plan.l}</div><div style={{fontFamily:'JetBrains Mono,monospace',fontSize:20,fontWeight:500,color:plan.c,marginBottom:1}}>{plan.p}</div><div style={{fontSize:11,color:C.mist,marginBottom:12}}>{plan.d}</div>{plan.f.map(f=><div key={f} style={{display:'flex',gap:6,fontSize:12,color:C.ink,marginBottom:4}}><span style={{color:plan.c}}>{'\u2713'}</span>{f}</div>)}{!cur&&<button onClick={()=>initPay(plan)} style={{...sb,width:'100%',background:plan.c,marginTop:10,padding:'9px'}}>Upgrade</button>}</div>)})}</div></div>)}
+        {tab==='plan'&&(<div style={{display:'flex',flexDirection:'column',gap:14}}>{co?.plan==='trial'&&<div style={{background:'linear-gradient(135deg,#0B1F3A,#1a3557)',borderRadius:16,padding:20,display:'flex',alignItems:'center',gap:14}}><span style={{fontSize:28}}>&#9889;</span><div style={{flex:1}}><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'#fff'}}>Trial &mdash; {trialDays} days remaining</div></div><div style={{fontFamily:'JetBrains Mono,monospace',fontSize:22,fontWeight:500,color:C.amber}}>{trialDays}d</div></div>}<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12}}>{PLANS.map(plan=>{const cur=co?.plan===plan.k;return(<div key={plan.k} style={{background:C.snow,borderRadius:16,border:'2px solid '+(cur?plan.c:C.glass),padding:18,position:'relative'}}>{cur&&<div style={{position:'absolute',top:10,right:10,fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:100,background:plan.c+'20',color:plan.c}}>Current</div>}<div style={{fontFamily:'Syne,sans-serif',fontSize:15,fontWeight:800,color:C.ink,marginBottom:2}}>{plan.l}</div><div style={{fontFamily:'JetBrains Mono,monospace',fontSize:20,fontWeight:500,color:plan.c,marginBottom:1}}>{plan.p}</div><div style={{fontSize:11,color:C.mist,marginBottom:12}}>{plan.d}</div>{plan.f.map(f=><div key={f} style={{display:'flex',gap:6,fontSize:12,color:C.ink,marginBottom:4}}><span style={{color:plan.c}}>{'\u2713'}</span>{f}</div>)}{!cur&&!BILLING_ENABLED&&<button disabled title="Paid plans are coming soon" style={{width:'100%',marginTop:10,padding:'9px',borderRadius:9,border:'1px solid '+C.fog,background:C.chalk,color:C.mist,fontSize:12,fontWeight:600,cursor:'not-allowed'}}>Coming soon</button>}</div>)})}</div></div>)}
       </div>
     </div>
   )
