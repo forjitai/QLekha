@@ -501,10 +501,44 @@ function Step4({client,items,profile,onBack,onDone}){
           <input type="number" value={installation} onChange={e=>setInstallation(e.target.value)} style={{...IS,marginBottom:0}}/>
         </div>
       </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 10px',marginBottom:14}}>
+        <div>
+          <label style={LB}>Discount (%)</label>
+          <input type="number" step="0.5" value={discountPct} onChange={e=>setDiscountPct(e.target.value)}
+            placeholder="0" style={{...IS,marginBottom:0}}/>
+        </div>
+        <div>
+          <label style={LB}>Transport (₹)</label>
+          <input type="number" value={transport} onChange={e=>setTransport(e.target.value)} style={{...IS,marginBottom:0}}/>
+        </div>
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:14,background:C.chalk,
+                   border:'1px solid '+C.glass,borderRadius:10,padding:'12px 14px'}}>
+        <label style={{display:'flex',alignItems:'flex-start',gap:10,cursor:'pointer'}}>
+          <input type="checkbox" checked={igst} onChange={e=>setIgst(e.target.checked)} style={{marginTop:2,width:16,height:16}}/>
+          <span>
+            <span style={{fontSize:13,fontWeight:600,color:C.ink}}>Inter-state sale (IGST)</span>
+            <span style={{display:'block',fontSize:11,color:C.mist,marginTop:2}}>
+              Charges one IGST line instead of splitting into CGST and SGST.
+            </span>
+          </span>
+        </label>
+        <label style={{display:'flex',alignItems:'flex-start',gap:10,cursor:'pointer'}}>
+          <input type="checkbox" checked={hideRate} onChange={e=>setHideRate(e.target.checked)} style={{marginTop:2,width:16,height:16}}/>
+          <span>
+            <span style={{fontSize:13,fontWeight:600,color:C.ink}}>Hide unit rates on the PDF</span>
+            <span style={{display:'block',fontSize:11,color:C.mist,marginTop:2}}>
+              Shows only the total per line. Useful when a builder forwards your quote on.
+            </span>
+          </span>
+        </label>
+      </div>
       <label style={LB}>Notes</label>
       <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Any special instructions..." style={{...IS,resize:'vertical',minHeight:60}}/>
       <div style={{background:C.ink,borderRadius:12,padding:'14px 18px',marginBottom:16}}>
-        {[['Subtotal',subtotal],['CGST',cgstAmount],['SGST',sgstAmount],['Installation',installAmt],['Discount',-discountAmt]].map(([l,v])=>v!==0&&(
+        {[['Subtotal',rawSubtotal],['Discount '+(discountPct>0?discountPct+'%':''),-pctOff],['IGST',igstAmount],['CGST',cgstAmount],['SGST',sgstAmount],['Installation',installAmt],['Transport',transportAmt],['Discount',-discountAmt]].map(([l,v])=>v!==0&&(
           <div key={l} style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
             <span style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{l}</span>
             <span style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,color:'rgba(255,255,255,0.8)'}}>₹{Math.abs(v).toLocaleString('en-IN')}</span>
