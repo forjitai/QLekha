@@ -392,7 +392,10 @@ function Step4({client,items,profile,onBack,onDone}){
         width_mm:it.width_mm,height_mm:it.height_mm,
         quantity:it.quantity,
         total_amount:it.total_amount,item_value:it.unit_price,
-        profile_cost:it.profile_cost??null,glass_cost:it.glass_cost??null
+        profile_cost:it.profile_cost??null,glass_cost:it.glass_cost??null,
+        window_type_id:it.windowTypeId||null,
+        labour_cost:it.labour_cost??0,wastage_cost:it.wastage_cost??0,
+        profile_detail:it.profile_detail??null
       }))
       await supabase.from('quote_items').insert(qItems)
       setSaved(q)
