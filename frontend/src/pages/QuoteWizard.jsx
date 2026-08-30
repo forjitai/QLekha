@@ -342,7 +342,11 @@ function Step3({windows,profile,onNext,onBack,initial}){
 function Step4({client,items,profile,onBack,onDone}){
   const[validity,setValidity]=useState(15)
   const[discount,setDiscount]=useState(0)
+  const[discountPct,setDiscountPct]=useState(0)
   const[installation,setInstallation]=useState(0)
+  const[transport,setTransport]=useState(0)
+  const[igst,setIgst]=useState(false)
+  const[hideRate,setHideRate]=useState(false)
   const[notes,setNotes]=useState('')
   const[saving,setSaving]=useState(false)
   const[err,setErr]=useState('')
@@ -352,18 +356,30 @@ function Step4({client,items,profile,onBack,onDone}){
   // Money is computed once, in whole rupees, so what is shown, saved and
   // printed can never disagree. CGST and SGST are split so they always sum
   // to the exact tax charged (never off by a rupee on a GST invoice).
-  const subtotal    = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity),0))
-  const gstTotal    = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity*(i.gst_rate||0)/100),0))
-  const cgstAmount  = Math.floor(gstTotal/2)
-  const sgstAmount  = gstTotal - cgstAmount
+  const rawSubtotal = Math.round(items.reduce((s,i)=>s+(i.unit_price*i.quantity),0))
+  // A percentage discount is applied to the goods before tax, which is how GST
+  // requires it. A flat amount is taken off the end instead.
+  const pctOff      = Math.round(rawSubtotal * (parseFloat(discountPct)||0) / 100)
+  const subtotal    = rawSubtotal - pctOff
+  const gstTotal    = Math.round(items.reduce((s,i)=>{
+                        const line = i.unit_price*i.quantity
+                        const afterPct = line - (line*(parseFloat(discountPct)||0)/100)
+                        return s + afterPct*(i.gst_rate||0)/100
+                      },0))
+  // Inter-state sales carry a single IGST; within the state it splits into
+  // CGST and SGST, which must always sum to exactly the tax charged.
+  const igstAmount  = igst ? gstTotal : 0
+  const cgstAmount  = igst ? 0 : Math.floor(gstTotal/2)
+  const sgstAmount  = igst ? 0 : gstTotal - cgstAmount
   const installAmt  = Math.round(parseFloat(installation)||0)
+  const transportAmt= Math.round(parseFloat(transport)||0)
   const discountAmt = Math.round(parseFloat(discount)||0)
-  const grandTotal  = subtotal + gstTotal + installAmt - discountAmt
+  const grandTotal  = subtotal + gstTotal + installAmt + transportAmt - discountAmt
 
   async function saveQuote(){
     if(!items.length) return setErr('Add at least one window before saving.')
     if(subtotal<=0) return setErr('This quote totals zero. Pick a profile and glass, or enter a price, before saving.')
-    if(discountAmt>subtotal+gstTotal) return setErr('Discount cannot be more than the quote total.')
+    if(discountAmt>subtotal+gstTotal+installAmt+transportAmt) return setErr('Discount cannot be more than the quote total.')
     setSaving(true);setErr('')
     try{
       const co=profile.companies||{}
@@ -377,10 +393,17 @@ function Step4({client,items,profile,onBack,onDone}){
         client_address:client.city,
         quote_number:qNum,
         status:'draft',
+        base_amount:rawSubtotal,
         sub_total:subtotal,
+        gst_enabled:true,
+        igst_enabled:igst,
+        igst_amount:igstAmount,
         cgst_amount:cgstAmount,sgst_amount:sgstAmount,
+        discount_pct:parseFloat(discountPct)||0,
         discount_amount:discountAmt,
         installation:installAmt,
+        transport:transportAmt,
+        hide_rate:hideRate,
         grand_total:grandTotal,
         expires_at:validUntil,
         notes
