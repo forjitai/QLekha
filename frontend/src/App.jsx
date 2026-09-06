@@ -883,6 +883,18 @@ function Quotes(){
     total_amount: Number(it.total_amount)||0,
   }))
 
+  // A revision copies the quote and its lines as the next version and marks the
+  // original superseded, so the negotiation history survives instead of being
+  // overwritten. A plain copy starts a fresh, unrelated quote.
+  async function duplicateQuote(q, asRevision){
+    try{
+      const{data,error}=await supabase.rpc('duplicate_quote',{p_quote_id:q.id,p_as_revision:asRevision})
+      if(error)throw error
+      showToast(asRevision?'Revision created as a draft':'Quote copied as a draft')
+      window.location.href='/quotes'
+    }catch(e){ showToast('Could not copy: '+(e?.message||'unknown'),'error') }
+  }
+
   async function updateStatus(id,status){try{const{error:e}=await supabase.from('quotes').update({status}).eq('id',id);if(e)throw e;setQuotes(p=>p.map(q=>q.id===id?{...q,status}:q));showToast('Status updated to '+status)}catch(e){showToast('Update failed: '+(e?.message||JSON.stringify(e)),'error')}}
   async function convertToInvoice(quote){
     // One invoice per quote - the DB enforces this too (uniq_invoice_per_quote),
@@ -950,7 +962,11 @@ function Quotes(){
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:10}}>
                   <div style={{minWidth:0}}>
                     <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{q.client_name}</div>
-                    <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist,marginTop:2}}>#{q.quote_number}</div>
+                    <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist,marginTop:2}}>
+                      #{q.quote_number}
+                      {q.version>1 && <span style={{marginLeft:6,padding:'1px 6px',borderRadius:100,background:C.glass,color:C.steel,fontWeight:700}}>v{q.version}</span>}
+                      {q.superseded_by && <span style={{marginLeft:6,color:C.amber,fontWeight:700}}>superseded</span>}
+                    </div>
                   </div>
                   <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:15,fontWeight:600,color:C.ink,whiteSpace:'nowrap'}}>
                     {'\u20b9'+(q.grand_total||0).toLocaleString('en-IN')}
@@ -967,6 +983,10 @@ function Quotes(){
                   <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={pdfItems(q)} bank={profile?.companies||{}}/>
                   <button onClick={()=>setWaModal(q)} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:12,cursor:'pointer',color:'#25D366',fontWeight:600}}>WA</button>
                   {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:12,cursor:'pointer',color:C.teal,whiteSpace:'nowrap',fontWeight:600}}>{converting===q.id?'...':'\u2192 Invoice'}</button>}
+                  <button onClick={()=>duplicateQuote(q,true)} title="Create the next version of this quote"
+                    style={{padding:'6px 10px',borderRadius:7,border:'1px solid '+C.fog,background:'transparent',fontSize:12,cursor:'pointer',color:C.ink,fontWeight:600}}>Revise</button>
+                  <button onClick={()=>duplicateQuote(q,false)} title="Start a new quote from this one"
+                    style={{padding:'6px 10px',borderRadius:7,border:'1px solid '+C.fog,background:'transparent',fontSize:12,cursor:'pointer',color:C.mist,fontWeight:600}}>Copy</button>
                 </div>
               </div>
             )})}
