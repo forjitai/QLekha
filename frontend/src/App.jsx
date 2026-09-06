@@ -10,6 +10,7 @@ import CRM from './pages/CRM'
 import QuoteWizard from './pages/QuoteWizard'
 import Designer from './pages/Designer'
 import Cutting from './pages/Cutting'
+import Measure from './pages/Measure'
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
 const C = {
@@ -52,6 +53,7 @@ const NAV = [
   {path:'/stock',     icon:'📦', label:'Stock'},
   {path:'/designer',  icon:'📐', label:'Designer'},
   {path:'/cutting',   icon:'🪚', label:'Cutting'},
+  {path:'/measure',   icon:'📏', label:'Measure'},
   {path:'/crm',       icon:'👥', label:'CRM'},
   {path:'/analytics', icon:'📈', label:'Analytics'},
   {path:'/settings',  icon:'⚙️', label:'Settings'},
@@ -1046,6 +1048,7 @@ export default function App() {
       <Route path="/stock" element={session ? <Layout><Stock/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/designer" element={session ? <Layout><Designer/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/cutting" element={session ? <Layout><Cutting/></Layout> : <Navigate to="/auth" replace/>}/>
+      <Route path="/measure" element={session ? <Layout><Measure/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/crm" element={session ? <Layout><CRM/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/analytics" element={session ? <Layout><Analytics/></Layout> : <Navigate to="/auth" replace/>}/>
       <Route path="/settings" element={session ? <Layout><Settings/></Layout> : <Navigate to="/auth" replace/>}/>
