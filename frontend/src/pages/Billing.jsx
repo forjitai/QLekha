@@ -158,6 +158,22 @@ export default function Billing() {
     setPdfLoading(null)
   }
 
+  // Once an invoice is raised the job still has to be made, delivered and fitted.
+  const JOB_STAGES = [
+    ['not_started','Not started'], ['fabrication','In fabrication'], ['ready','Ready'],
+    ['delivered','Delivered'], ['installed','Installed'], ['closed','Closed'],
+  ]
+  const STAGE_COLOR = { not_started:C.mist, fabrication:C.amber, ready:C.steel,
+                        delivered:C.teal, installed:C.green, closed:C.mist }
+
+  async function setJobStage(inv, stage) {
+    setInvoices(prev => prev.map(i => i.id===inv.id ? {...i, job_stage:stage} : i))
+    const patch = { job_stage: stage }
+    if (stage === 'installed') patch.installed_at = new Date().toISOString()
+    const { error } = await supabase.from('invoices').update(patch).eq('id', inv.id)
+    if (error) console.error('job stage:', error.message)
+  }
+
   async function downloadReceiptPDF(rcp) {
     setPdfLoading(rcp.id)
     try {
@@ -255,8 +271,17 @@ export default function Billing() {
                           <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:13,fontWeight:700,color:(inv.balance_due||0)>0?C.amber:C.green}}>{fmt(inv.balance_due)}</div>
                         </div>
                       </div>
-                      <div style={{fontSize:12,color:overdue&&inv.status!=='paid'?C.red:C.mist,marginBottom:10}}>
-                        Due {inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '\u2014'}
+                      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:10}}>
+                        <span style={{fontSize:12,color:overdue&&inv.status!=='paid'?C.red:C.mist}}>
+                          Due {inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '\u2014'}
+                        </span>
+                        <select value={inv.job_stage||'not_started'} onChange={e=>setJobStage(inv,e.target.value)}
+                          onClick={e=>e.stopPropagation()}
+                          style={{padding:'3px 9px',borderRadius:100,fontSize:11,fontWeight:700,border:'none',cursor:'pointer',
+                                  background:(STAGE_COLOR[inv.job_stage||'not_started'])+'1a',
+                                  color:STAGE_COLOR[inv.job_stage||'not_started'],outline:'none'}}>
+                          {JOB_STAGES.map(([k,l])=><option key={k} value={k}>{l}</option>)}
+                        </select>
                       </div>
                       <div style={{display:'flex',gap:6,flexWrap:'wrap',borderTop:'1px solid '+C.chalk,paddingTop:10}}>
                         <button onClick={()=>{const ph=(inv.client_phone||'').replace(/\D/g,'');if(ph)window.open('https://wa.me/'+ph+'?text='+encodeURIComponent('Hi '+inv.client_name+', invoice #'+inv.invoice_number+' for '+fmt(inv.grand_total)+' is ready.'),'_blank')}}
