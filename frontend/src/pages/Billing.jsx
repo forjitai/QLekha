@@ -166,6 +166,17 @@ export default function Billing() {
   const STAGE_COLOR = { not_started:C.mist, fabrication:C.amber, ready:C.steel,
                         delivered:C.teal, installed:C.green, closed:C.mist }
 
+  // Converting in place keeps any advance already paid against the proforma
+  // attached to the same record, and issues a proper tax invoice number.
+  async function convertToTaxInvoice(inv) {
+    if (!confirm('Convert ' + inv.invoice_number + ' to a tax invoice?')) return
+    const num = 'INV-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*9000)+1000)
+    const { error } = await supabase.from('invoices')
+      .update({ type:'tax_invoice', invoice_number:num }).eq('id', inv.id)
+    if (error) return alert('Could not convert: ' + error.message)
+    setInvoices(prev => prev.map(i => i.id===inv.id ? {...i, type:'tax_invoice', invoice_number:num} : i))
+  }
+
   async function setJobStage(inv, stage) {
     setInvoices(prev => prev.map(i => i.id===inv.id ? {...i, job_stage:stage} : i))
     const patch = { job_stage: stage }
@@ -186,7 +197,9 @@ export default function Billing() {
     setPdfLoading(null)
   }
 
-  const filteredInvoices = filter==='all' ? invoices : invoices.filter(i=>i.status===filter)
+  const filteredInvoices = filter==='all' ? invoices
+    : filter==='proforma' ? invoices.filter(i=>i.type==='proforma')
+    : invoices.filter(i=>i.status===filter)
   const totalBilled = invoices.reduce((s,i)=>s+(i.grand_total||0),0)
   const totalCollected = invoices.reduce((s,i)=>s+(i.paid_amount||0),0)
   const totalOutstanding = invoices.reduce((s,i)=>s+(i.balance_due||0),0)
@@ -229,7 +242,7 @@ export default function Billing() {
       {tab === 'invoices' && (
         <>
           <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
-            {['all','pending','partial','paid','overdue'].map(s=>(
+            {['all','proforma','pending','partial','paid','overdue'].map(s=>(
               <button key={s} onClick={()=>setFilter(s)} style={{padding:'5px 12px',borderRadius:100,fontSize:11,fontWeight:600,cursor:'pointer',border:'1px solid',borderColor:filter===s?C.ink:C.glass,background:filter===s?C.ink:C.snow,color:filter===s?'#fff':C.ink,textTransform:'capitalize'}}>
                 {s}
               </button>
@@ -255,7 +268,10 @@ export default function Billing() {
                           <div style={{fontWeight:700,fontSize:14,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{inv.client_name}</div>
                           <div style={{fontFamily:'JetBrains Mono,monospace',fontSize:11,color:C.mist,marginTop:2}}>#{inv.invoice_number}</div>
                         </div>
-                        <span style={{...sc,padding:'3px 9px',borderRadius:100,fontSize:10,fontWeight:700,textTransform:'capitalize',whiteSpace:'nowrap'}}>{inv.status}</span>
+                        <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end'}}>
+                          <span style={{...sc,padding:'3px 9px',borderRadius:100,fontSize:10,fontWeight:700,textTransform:'capitalize',whiteSpace:'nowrap'}}>{inv.status}</span>
+                          {inv.type==='proforma' && <span style={{padding:'2px 8px',borderRadius:100,fontSize:9,fontWeight:700,background:'rgba(124,58,237,0.1)',color:C.purp,whiteSpace:'nowrap'}}>PROFORMA</span>}
+                        </div>
                       </div>
                       <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,marginBottom:10}}>
                         <div>
@@ -288,6 +304,10 @@ export default function Billing() {
                           style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',color:'#25D366',fontSize:12,fontWeight:600,cursor:'pointer'}}>WA</button>
                         <button onClick={()=>downloadInvoicePDF(inv)} disabled={pdfLoading===inv.id}
                           style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(27,79,216,0.3)',background:'rgba(27,79,216,0.06)',color:C.steel,fontSize:12,fontWeight:600,cursor:'pointer'}}>{pdfLoading===inv.id?'...':'PDF'}</button>
+                        {inv.type==='proforma'&&(
+                          <button onClick={()=>convertToTaxInvoice(inv)}
+                            style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(124,58,237,0.3)',background:'rgba(124,58,237,0.06)',color:C.purp,fontSize:12,fontWeight:600,cursor:'pointer'}}>&rarr; Tax Invoice</button>
+                        )}
                         {inv.status!=='paid'&&inv.status!=='cancelled'&&(
                           <button onClick={()=>setPayModal(inv)}
                             style={{padding:'6px 10px',borderRadius:7,border:'1px solid '+C.green+'40',background:C.green+'10',color:C.green,fontSize:12,fontWeight:600,cursor:'pointer'}}>Record Payment</button>
