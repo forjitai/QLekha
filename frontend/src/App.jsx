@@ -898,20 +898,25 @@ function Quotes(){
   }
 
   async function updateStatus(id,status){try{const{error:e}=await supabase.from('quotes').update({status}).eq('id',id);if(e)throw e;setQuotes(p=>p.map(q=>q.id===id?{...q,status}:q));showToast('Status updated to '+status)}catch(e){showToast('Update failed: '+(e?.message||JSON.stringify(e)),'error')}}
-  async function convertToInvoice(quote){
+  // A proforma is an invoice that is not a tax invoice yet: same row, same
+  // payments and receipts, different type. It converts in place later so any
+  // advance already received stays attached to it.
+  const convertToProforma = q => convertToInvoice(q, 'proforma')
+
+  async function convertToInvoice(quote, docType='tax_invoice'){
     // One invoice per quote - the DB enforces this too (uniq_invoice_per_quote),
     // this check just gives a readable message instead of a constraint error.
     const{data:existing}=await supabase.from('invoices').select('invoice_number').eq('quote_id',quote.id).maybeSingle()
-    if(existing) return showToast('This quote is already invoiced as '+existing.invoice_number,'error')
+    if(existing) return showToast('This quote already has '+existing.invoice_number,'error')
     setConverting(quote.id)
     try{
-      const invNum='INV-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000)
+      const invNum=(docType==='proforma'?'PI-':'INV-')+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000)
       const dueDate=new Date(Date.now()+30*864e5).toISOString()
       const{data:inv,error}=await supabase.from('invoices').insert({
         company_id:quote.company_id,quote_id:quote.id,
         client_id:quote.client_id,client_name:quote.client_name,
         client_phone:quote.client_phone||quote.clients?.phone||null,
-        invoice_number:invNum,type:'tax_invoice',status:'pending',
+        invoice_number:invNum,type:docType,status:'pending',
         // Carry the quote's tax split across unchanged. Re-halving it here
         // produced half-rupee amounts (the /2 sat outside Math.round) and
         // could disagree with the quote the customer already approved.
@@ -985,6 +990,9 @@ function Quotes(){
                   <QuotePDFBar quote={q} company={profile?.companies||{}} client={{name:q.client_name,phone,address:q.client_address}} items={pdfItems(q)} bank={profile?.companies||{}}/>
                   <button onClick={()=>setWaModal(q)} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(37,211,102,0.3)',background:'rgba(37,211,102,0.06)',fontSize:12,cursor:'pointer',color:'#25D366',fontWeight:600}}>WA</button>
                   {q.status!=='rejected'&&<button onClick={()=>convertToInvoice(q)} disabled={converting===q.id} style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(14,165,160,0.3)',background:'rgba(14,165,160,0.06)',fontSize:12,cursor:'pointer',color:C.teal,whiteSpace:'nowrap',fontWeight:600}}>{converting===q.id?'...':'\u2192 Invoice'}</button>}
+                  {q.status!=='rejected'&&<button onClick={()=>convertToProforma(q)} disabled={converting===q.id}
+                    title="Raise a proforma for an advance payment"
+                    style={{padding:'6px 10px',borderRadius:7,border:'1px solid rgba(124,58,237,0.3)',background:'rgba(124,58,237,0.06)',fontSize:12,cursor:'pointer',color:C.purp,whiteSpace:'nowrap',fontWeight:600}}>Proforma</button>}
                   <button onClick={()=>duplicateQuote(q,true)} title="Create the next version of this quote"
                     style={{padding:'6px 10px',borderRadius:7,border:'1px solid '+C.fog,background:'transparent',fontSize:12,cursor:'pointer',color:C.ink,fontWeight:600}}>Revise</button>
                   <button onClick={()=>duplicateQuote(q,false)} title="Start a new quote from this one"
